@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Vinícius dos Santos Oliveira
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-License-Identifier: MIT-0
 
 #include <fekal/ast.hpp>
 #include <boost/hana/functional/overload.hpp>

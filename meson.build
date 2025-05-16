@@ -2,7 +2,7 @@ project(
     'fekal', 'cpp',
     default_options : ['cpp_std=c++20'],
     meson_version : '>=1.3.0',
-    license : 'Apache-2.0 WITH LLVM-exception',
+    license : 'MIT-0',
     version : '0.1.0',
 )
 
