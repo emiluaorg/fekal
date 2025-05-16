@@ -1,0 +1,23 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{cpp,hpp,ypp,c,h,y}]
+indent_style = space
+indent_size = 4
+max_line_length = 80
+
+[*.adoc]
+max_line_length = 80
+
+[meson.build]
+indent_style = space
+indent_size = 4
+
+[meson_options.txt]
+indent_style = space
+indent_size = 4

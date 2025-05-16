@@ -1,0 +1,165 @@
+// Copyright (c) 2025 Vinícius dos Santos Oliveira
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+#include <fekal/reader.hpp>
+#include <system_error>
+#include <stdexcept>
+#include <charconv>
+#include <cassert>
+
+namespace fekal {
+
+reader::reader(std::string_view input)
+    : begin{input.data()}
+    , end{input.data() + input.size()}
+    , cursor{input.data()}
+{}
+
+token::symbol reader::symbol() const
+{
+    return symbol_;
+}
+
+template<>
+std::string reader::value<token::symbol::IDENTIFIER>() const
+{
+    return static_cast<std::string>(literal());
+}
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_INT>() const
+{
+    std::string_view v = literal();
+    std::int64_t ret;
+    auto ec = std::from_chars(v.data(), v.data() + v.size(), ret).ec;
+    if (ec != std::errc{}) {
+        throw std::system_error{std::make_error_code(ec)};
+    }
+    return ret;
+}
+
+unsigned reader::line() const
+{
+    return line_;
+}
+
+unsigned reader::column() const
+{
+    return column_;
+}
+
+std::string_view reader::literal() const
+{
+    return {begin, cursor};
+}
+
+std::string_view reader::tail() const
+{
+    return {cursor, end};
+}
+
+bool reader::next()
+{
+    column_ += cursor - begin;
+    begin = cursor;
+
+    for (;;) {
+        [[maybe_unused]] const char* backup;
+        /*!re2c
+        re2c:indent:string = "        ";
+        re2c:yyfill:enable = 0;
+        re2c:api = custom;
+        re2c:api:style = free-form;
+        re2c:define:YYCTYPE = char;
+        re2c:define:YYPEEK = "(cursor < end) ? *cursor : '\\x00'";
+        re2c:define:YYSKIP = "++cursor;";
+        re2c:define:YYBACKUP = "backup = cursor;";
+        re2c:define:YYRESTORE = "cursor = backup;";
+
+        int32lit = [0-9]+;
+        doublelit = [0-9]+[.][0-9]+;
+        identifier = [a-zA-Z_][a-zA-Z0-9_]*;
+        end = "\x00";
+        lws = [ ]+;
+        */
+        %{
+        * { throw std::runtime_error{"invalid token"}; }
+        {end} {
+            if (cursor <= end) {
+                throw std::runtime_error{"invalid null byte"};
+            }
+            cursor = end;
+            return false;
+        }
+        "(" { symbol_ = token::symbol::LPAREN; return true; }
+        ")" { symbol_ = token::symbol::RPAREN; return true; }
+        "[" { symbol_ = token::symbol::LBRACK; return true; }
+        "]" { symbol_ = token::symbol::RBRACK; return true; }
+        "{" { symbol_ = token::symbol::LBRACE; return true; }
+        "}" { symbol_ = token::symbol::RBRACE; return true; }
+        "," { symbol_ = token::symbol::COMMA; return true; }
+        "@" { symbol_ = token::symbol::AT; return true; }
+        "!" { symbol_ = token::symbol::OP_NEG; return true; }
+        "&&" { symbol_ = token::symbol::OP_AND; return true; }
+        "||" { symbol_ = token::symbol::OP_OR; return true; }
+        "+" { symbol_ = token::symbol::OP_PLUS; return true; }
+        "-" { symbol_ = token::symbol::OP_MINUS; return true; }
+        "*" { symbol_ = token::symbol::OP_MUL; return true; }
+        "/" { symbol_ = token::symbol::OP_DIV; return true; }
+        "<<" { symbol_ = token::symbol::OP_LSHIFT; return true; }
+        ">>" { symbol_ = token::symbol::OP_RSHIFT; return true; }
+        "&" { symbol_ = token::symbol::OP_BAND; return true; }
+        "|" { symbol_ = token::symbol::OP_BOR; return true; }
+        "^" { symbol_ = token::symbol::OP_BXOR; return true; }
+        "==" { symbol_ = token::symbol::OP_EQ; return true; }
+        "!=" { symbol_ = token::symbol::OP_NE; return true; }
+        "<" { symbol_ = token::symbol::OP_LT; return true; }
+        "<=" { symbol_ = token::symbol::OP_LTE; return true; }
+        ">" { symbol_ = token::symbol::OP_GT; return true; }
+        ">=" { symbol_ = token::symbol::OP_GTE; return true; }
+        {int32lit} { symbol_ = token::symbol::LIT_INT; return true; }
+        "POLICY" { symbol_ = token::symbol::KW_POLICY; return true; }
+        "ALLOW" { symbol_ = token::symbol::KW_ALLOW; return true; }
+        "LOG" { symbol_ = token::symbol::KW_LOG; return true; }
+        "KILL_PROCESS" {
+            symbol_ = token::symbol::KW_KILL_PROCESS; return true; }
+        "KILL_THREAD" { symbol_ = token::symbol::KW_KILL_THREAD; return true; }
+        "USER_NOTIF" { symbol_ = token::symbol::KW_USER_NOTIF; return true; }
+        "ERRNO" { symbol_ = token::symbol::KW_ERRNO; return true; }
+        "TRAP" { symbol_ = token::symbol::KW_TRAP; return true; }
+        "TRACE" { symbol_ = token::symbol::KW_TRACE; return true; }
+        {identifier} { symbol_ = token::symbol::IDENTIFIER; return true; }
+        {lws} {
+            column_ += cursor - begin;
+            begin = cursor;
+            continue;
+        }
+        "\n" {
+            ++line_;
+            column_ = 0;
+            ++begin;
+            continue;
+        }
+        %}
+    }
+}
+
+bool reader::operator==(const reader& o) const
+{
+    assert(end == o.end);
+    return std::tie(begin, cursor) == std::tie(o.begin, o.cursor);
+}
+
+bool reader::operator!=(const reader& o) const
+{
+    assert(end == o.end);
+    return std::tie(begin, cursor) != std::tie(o.begin, o.cursor);
+}
+
+bool reader::operator<(const reader& o) const
+{
+    assert(end == o.end);
+    return std::tie(begin, cursor) < std::tie(o.begin, o.cursor);
+}
+
+} // namespace fekal
