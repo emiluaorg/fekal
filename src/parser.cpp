@@ -4,6 +4,7 @@
 #include <fekal/recursion_context.hpp>
 #include <fekal/parser.hpp>
 #include <fekal/reader.hpp>
+#include <fekal/peg.hpp>
 
 namespace fekal {
 
@@ -11,27 +12,6 @@ struct recursion_context_rules;
 using recursion_context =
     basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
 using OptExpr = std::optional<ast::Expr>;
-
-template<class F>
-static inline
-OptExpr choice(const recursion_context& recur, reader& r, F&& f)
-{
-    return f(recur, r);
-}
-
-template<class F1, class F2, class... F3>
-static inline
-OptExpr choice(const recursion_context& recur, reader& r, F1&& f1, F2&& f2,
-               F3&&... f3)
-{
-    auto backup = r;
-    if (auto res = f1(recur, r) ; res) {
-        return res;
-    } else {
-        r = backup;
-        return choice(recur, r, std::forward<F2>(f2), std::forward<F3>(f3)...);
-    }
-}
 
 // E = E, ("+" / "-"), E / T;
 static OptExpr E(const recursion_context& recur, reader& r);
