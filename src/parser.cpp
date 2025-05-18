@@ -1,99 +1,101 @@
 // Copyright (c) 2025 Vinícius dos Santos Oliveira
 // SPDX-License-Identifier: MIT-0
 
-#include <boost/coroutine2/coroutine.hpp>
-
 #include <fekal/recursion_context.hpp>
 #include <fekal/parser.hpp>
 #include <fekal/reader.hpp>
 
 namespace fekal {
 
-using coro_type = boost::coroutines2::coroutine<std::pair<ast::Expr, reader>>;
-using coro_pull_type = coro_type::pull_type;
-using coro_push_type = coro_type::push_type;
-
 using recursion_context = basic_recursion_context<ast::Expr, reader>;
+using OptExpr = std::optional<ast::Expr>;
 
+template<class F>
 static inline
-void choice(const recursion_context&, const reader&, coro_push_type&)
-{}
-
-template<class F1, class... F2>
-static inline
-void choice(const recursion_context& recur, const reader& r,
-            coro_push_type& yield, F1&& f1, F2&&... f2)
+OptExpr choice(const recursion_context& recur, reader& r, F&& f)
 {
-    f1(recur, r, yield);
-    choice(recur, r, yield, std::forward<F2>(f2)...);
+    return f(recur, r);
 }
 
-// E = E, "+", T | E, "-", T | T;
-static void E(const recursion_context& recur, reader r, coro_push_type& yield);
+template<class F1, class F2, class... F3>
+static inline
+OptExpr choice(const recursion_context& recur, reader& r, F1&& f1, F2&& f2,
+               F3&&... f3)
+{
+    auto backup = r;
+    if (auto res = f1(recur, r) ; res) {
+        return res;
+    } else {
+        r = backup;
+        return choice(recur, r, std::forward<F2>(f2), std::forward<F3>(f3)...);
+    }
+}
 
-// T = int | "(", E, ")";
-static void T(const recursion_context& recur, reader r, coro_push_type& yield);
+// E = E, ("+" / "-"), T / T;
+static OptExpr E(const recursion_context& recur, reader& r);
 
-static void E(const recursion_context& recur, reader r, coro_push_type& yield)
+// T = int / "(", E, ")";
+static OptExpr T(const recursion_context& recur, reader& r);
+
+static OptExpr E(const recursion_context& recur, reader& r)
 {
     return choice(
-        recur, r, yield,
-        // E "+" T | E "-" T
-        [](const recursion_context& recur, const reader& r, auto& yield) {
+        recur, r,
+        // E, ("+" / "-"), T
+        [](const recursion_context& recur, reader& r) -> OptExpr {
             static constexpr auto OP_PLUS = token::symbol::OP_PLUS;
             static constexpr auto OP_MINUS = token::symbol::OP_MINUS;
 
-            for (auto& [e, r] : coro_pull_type{recur.wrap<E>(r)}) {
-                if (!r.next()) {
-                    continue;
-                }
+            auto e = recur.enter<E>(r);
+            if (!e || !r.next()) {
+                return std::nullopt;
+            }
 
-                auto op = r.symbol();
-                if ((op != OP_PLUS && op != OP_MINUS) || !r.next()) {
-                    continue;
-                }
-                if (op == OP_PLUS) {
-                    for (auto& [t, r] : coro_pull_type{recur.wrap<T>(r)}) {
-                        yield(std::make_pair(ast::SumExpr{e, std::move(t)}, r));
-                    }
-                } else { assert(op == OP_MINUS);
-                    for (auto& [t, r] : coro_pull_type{recur.wrap<T>(r)}) {
-                        yield(std::make_pair(
-                            ast::SubtractExpr{e, std::move(t)}, r));
-                    }
-                }
+            auto op = r.symbol();
+            if ((op != OP_PLUS && op != OP_MINUS) || !r.next()) {
+                return std::nullopt;
+            }
+
+            auto t = recur.enter<T>(r);
+            if (!t) {
+                return std::nullopt;
+            }
+            if (op == OP_PLUS) {
+                return ast::SumExpr{std::move(*e), std::move(*t)};
+            } else { assert(op == OP_MINUS);
+                return ast::SubtractExpr{std::move(*e), std::move(*t)};
             }
         },
         // T
-        [](const recursion_context& recur, const reader& r, auto& yield) {
-            recur.wrap<T>(r)(yield);
+        [](const recursion_context& recur, reader& r) {
+            return recur.enter<T>(r);
         });
 }
 
-static void T(const recursion_context& recur, reader r, coro_push_type& yield)
+static OptExpr T(const recursion_context& recur, reader& r)
 {
     return choice(
-        recur, r, yield,
+        recur, r,
         // int
-        [](const recursion_context& recur, const reader& r, auto& yield) {
+        [](const recursion_context& recur, reader& r) -> OptExpr {
             if (r.symbol() == token::symbol::LIT_INT) {
-                yield(std::make_pair(
-                    ast::IntLit{r.value<token::symbol::LIT_INT>()}, r));
+                return ast::IntLit{r.value<token::symbol::LIT_INT>()};
+            } else {
+                return std::nullopt;
             }
         },
         // "(", E, ")"
-        [](const recursion_context& recur, reader r, auto& yield) {
+        [](const recursion_context& recur, reader& r) -> OptExpr {
             if (r.symbol() != token::symbol::LPAREN || !r.next()) {
-                return;
+                return std::nullopt;
             }
 
-            for (auto& e : coro_pull_type{recur.wrap<E>(r)}) {
-                auto& r = e.second;
-                if (!r.next() || r.symbol() != token::symbol::RPAREN) {
-                    continue;
-                }
-                yield(std::move(e));
+            auto e = recur.enter<E>(r);
+            if (!e || !r.next() || r.symbol() != token::symbol::RPAREN) {
+                return std::nullopt;
             }
+
+            return e;
         });
 }
 
@@ -104,13 +106,15 @@ ast::Expr parse(std::string_view input)
         throw std::runtime_error{"empty tree"};
     }
 
-    for (auto& [e, r] : coro_pull_type{recursion_context{r}.wrap<E>(r)}) {
-        if (!r.next()) {
-            return e;
-        }
+    auto e = recursion_context{r}.enter<E>(r);
+    if (!e) {
+        throw std::runtime_error{"no match"};
     }
 
-    throw std::runtime_error{"no match"};
+    if (r.next()) {
+        throw std::runtime_error{"unexpected token"};
+    }
+    return *e;
 }
 
 } // namespace fekal
