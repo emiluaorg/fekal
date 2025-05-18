@@ -17,6 +17,7 @@ reader::reader(std::string_view input)
 
 token::symbol reader::symbol() const
 {
+    assert(begin < cursor);
     return symbol_;
 }
 
