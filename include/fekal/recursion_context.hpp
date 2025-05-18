@@ -5,7 +5,6 @@
 
 #include <optional>
 #include <cassert>
-#include <ranges>
 
 namespace fekal {
 
@@ -67,8 +66,7 @@ struct basic_recursion_context
             return last_res;
         }
 
-        for (unsigned lim : std::views::iota(1)) {
-            limit = lim;
+        for (limit = 1 ;; ++limit) {
             auto r2 = backup;
             auto res = Fn(inner, r2);
             assert(res);
