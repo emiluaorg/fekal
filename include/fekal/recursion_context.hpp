@@ -54,24 +54,21 @@ struct basic_recursion_context
             return last_res;
         }
 
-        auto last_reader = reader;
-
         for (unsigned lim : std::views::iota(1)) {
             limit = lim;
-            reader = backup;
-            auto res = Fn(inner, reader);
+            auto r2 = backup;
+            auto res = Fn(inner, r2);
             assert(res);
-            if (last_reader < reader) {
+            if (reader < r2) {
                 // we found more tokens in the new deeper iteration
                 using std::swap;
                 swap(last_res, res);
-                last_reader = reader;
+                reader = r2;
             } else {
                 break;
             }
         }
 
-        reader = last_reader;
         return last_res;
     }
 
