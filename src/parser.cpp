@@ -7,7 +7,9 @@
 
 namespace fekal {
 
-using recursion_context = basic_recursion_context<ast::Expr, reader>;
+struct recursion_context_rules;
+using recursion_context =
+    basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
 using OptExpr = std::optional<ast::Expr>;
 
 template<class F>
@@ -36,6 +38,12 @@ static OptExpr E(const recursion_context& recur, reader& r);
 
 // T = int / "(", E, ")";
 static OptExpr T(const recursion_context& recur, reader& r);
+
+struct recursion_context_rules
+    : basic_recursion_context_rules<
+        ast::Expr, reader, recursion_context_rules,
+        E, T>
+{};
 
 static OptExpr E(const recursion_context& recur, reader& r)
 {
