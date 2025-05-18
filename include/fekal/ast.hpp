@@ -78,7 +78,28 @@ inline void swap(MulExpr& a, MulExpr& b)
     swap(a.right, b.right);
 }
 
-using Exprs = boost::mp11::mp_list<IntLit, SumExpr, SubtractExpr, MulExpr>;
+struct DivExpr
+{
+    DivExpr(Expr left, Expr right);
+    DivExpr(DivExpr&& o) = default;
+
+    DivExpr(const DivExpr& o)
+        : left{std::make_unique<Expr>(*o.left)}
+        , right{std::make_unique<Expr>(*o.right)}
+    {}
+
+    std::unique_ptr<Expr> left, right;
+};
+
+inline void swap(DivExpr& a, DivExpr& b)
+{
+    using std::swap;
+    swap(a.left, b.left);
+    swap(a.right, b.right);
+}
+
+using Exprs = boost::mp11::mp_list<
+    IntLit, SumExpr, SubtractExpr, MulExpr, DivExpr>;
 
 struct Expr : boost::mp11::mp_apply<std::variant, Exprs>
 {
@@ -99,6 +120,11 @@ inline SubtractExpr::SubtractExpr(Expr left, Expr right)
 {}
 
 inline MulExpr::MulExpr(Expr left, Expr right)
+    : left{std::make_unique<Expr>(std::move(left))}
+    , right{std::make_unique<Expr>(std::move(right))}
+{}
+
+inline DivExpr::DivExpr(Expr left, Expr right)
     : left{std::make_unique<Expr>(std::move(left))}
     , right{std::make_unique<Expr>(std::move(right))}
 {}

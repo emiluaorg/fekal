@@ -13,29 +13,32 @@ using recursion_context =
     basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
 using OptExpr = std::optional<ast::Expr>;
 
-// E = E, ("+" / "-"), E / T;
-static OptExpr E(const recursion_context& recur, reader& r);
+// SumExpr = SumExpr, ("+" / "-"), SumExpr / MulExpr;
+static OptExpr SumExpr(const recursion_context& recur, reader& r);
 
-// T = int / "(", E, ")";
-static OptExpr T(const recursion_context& recur, reader& r);
+// MulExpr = MulExpr, ("*" / "/"), MulExpr / Term;
+static OptExpr MulExpr(const recursion_context& recur, reader& r);
+
+// Term = int / "(", SumExpr, ")";
+static OptExpr Term(const recursion_context& recur, reader& r);
 
 struct recursion_context_rules
     : basic_recursion_context_rules<
         ast::Expr, reader, recursion_context_rules,
-        E, T>
+        SumExpr, MulExpr, Term>
 {};
 
-static OptExpr E(const recursion_context& recur, reader& r)
+static OptExpr SumExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
-        // E, ("+" / "-"), E
+        // SumExpr, ("+" / "-"), SumExpr
         [](const recursion_context& recur, reader& r) -> OptExpr {
             static constexpr auto OP_PLUS = token::symbol::OP_PLUS;
             static constexpr auto OP_MINUS = token::symbol::OP_MINUS;
 
-            auto e = recur.enter<E>(r);
-            if (!e || !r.next()) {
+            auto s1 = recur.enter<SumExpr>(r);
+            if (!s1 || !r.next()) {
                 return std::nullopt;
             }
 
@@ -44,23 +47,58 @@ static OptExpr E(const recursion_context& recur, reader& r)
                 return std::nullopt;
             }
 
-            auto e2 = recur.right1<E>(r);
-            if (!e2) {
+            auto s2 = recur.right1<SumExpr>(r);
+            if (!s2) {
                 return std::nullopt;
             }
             if (op == OP_PLUS) {
-                return ast::SumExpr{std::move(*e), std::move(*e2)};
+                return ast::SumExpr{std::move(*s1), std::move(*s2)};
             } else { assert(op == OP_MINUS);
-                return ast::SubtractExpr{std::move(*e), std::move(*e2)};
+                return ast::SubtractExpr{std::move(*s1), std::move(*s2)};
             }
         },
-        // T
+        // MulExpr
         [](const recursion_context& recur, reader& r) {
-            return recur.enter<T>(r);
+            return recur.enter<MulExpr>(r);
         });
 }
 
-static OptExpr T(const recursion_context& recur, reader& r)
+static OptExpr MulExpr(const recursion_context& recur, reader& r)
+{
+    return choice(
+        recur, r,
+        // MulExpr, ("*" / "/"), MulExpr
+        [](const recursion_context& recur, reader& r) -> OptExpr {
+            static constexpr auto OP_MUL = token::symbol::OP_MUL;
+            static constexpr auto OP_DIV = token::symbol::OP_DIV;
+
+            auto m1 = recur.enter<MulExpr>(r);
+            if (!m1 || !r.next()) {
+                return std::nullopt;
+            }
+
+            auto op = r.symbol();
+            if ((op != OP_MUL && op != OP_DIV) || !r.next()) {
+                return std::nullopt;
+            }
+
+            auto m2 = recur.right1<MulExpr>(r);
+            if (!m2) {
+                return std::nullopt;
+            }
+            if (op == OP_MUL) {
+                return ast::MulExpr{std::move(*m1), std::move(*m2)};
+            } else { assert(op == OP_DIV);
+                return ast::DivExpr{std::move(*m1), std::move(*m2)};
+            }
+        },
+        // Term
+        [](const recursion_context& recur, reader& r) {
+            return recur.enter<Term>(r);
+        });
+}
+
+static OptExpr Term(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
@@ -72,13 +110,13 @@ static OptExpr T(const recursion_context& recur, reader& r)
                 return std::nullopt;
             }
         },
-        // "(", E, ")"
+        // "(", SumExpr, ")"
         [](const recursion_context& recur, reader& r) -> OptExpr {
             if (r.symbol() != token::symbol::LPAREN || !r.next()) {
                 return std::nullopt;
             }
 
-            auto e = recur.enter<E>(r);
+            auto e = recur.enter<SumExpr>(r);
             if (!e || !r.next() || r.symbol() != token::symbol::RPAREN) {
                 return std::nullopt;
             }
@@ -94,7 +132,7 @@ ast::Expr parse(std::string_view input)
         throw std::runtime_error{"empty tree"};
     }
 
-    auto e = recursion_context{r}.enter<E>(r);
+    auto e = recursion_context{r}.enter<SumExpr>(r);
     if (!e) {
         throw std::runtime_error{"no match"};
     }

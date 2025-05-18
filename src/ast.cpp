@@ -15,7 +15,8 @@ int eval(const ast::Expr& e)
         [](const ast::SumExpr& e) { return eval(*e.left) + eval(*e.right); },
         [](const ast::SubtractExpr& e) {
             return eval(*e.left) - eval(*e.right); },
-        [](const ast::MulExpr& e) { return eval(*e.left) * eval(*e.right); }
+        [](const ast::MulExpr& e) { return eval(*e.left) * eval(*e.right); },
+        [](const ast::DivExpr& e) { return eval(*e.left) / eval(*e.right); }
     ), e);
 }
 
