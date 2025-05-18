@@ -83,6 +83,16 @@ struct basic_recursion_context
         return last_res;
     }
 
+    // useful to define left-to-right associativity
+    template<fn_type Fn>
+    std::optional<T> right1(Reader& reader) const
+    {
+        assert(this->reader < reader);
+        basic_recursion_context inner{reader};
+        inner.limit<Fn>().emplace(0);
+        return Fn(inner, reader);
+    }
+
     template<fn_type Fn>
     std::optional<unsigned>& limit()
     {
