@@ -44,14 +44,14 @@ struct basic_recursion_context
     {
         basic_recursion_context inner{reader};
         if (this->reader == reader) { // left-recursion
-            if (const auto& lim = limit<Fn>() ; lim && *lim == 0) {
-                return std::nullopt;
-            }
-
             // inherit and enforce current limits
             inner = *this;
 
             if (auto& lim = inner.limit<Fn>() ; lim) {
+                if (*lim == 0) {
+                    return std::nullopt;
+                }
+
                 --*lim;
                 return Fn(inner, reader);
             }
@@ -99,14 +99,6 @@ struct basic_recursion_context
         using tagged_type = recursion_context_tagged_optional<
             T, Reader, Rules, Fn>;
         return static_cast<tagged_type&>(limits);
-    }
-
-    template<fn_type Fn>
-    const std::optional<unsigned>& limit() const
-    {
-        using tagged_type = recursion_context_tagged_optional<
-            T, Reader, Rules, Fn>;
-        return static_cast<const tagged_type&>(limits);
     }
 
     Reader reader;
