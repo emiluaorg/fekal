@@ -33,7 +33,7 @@ OptExpr choice(const recursion_context& recur, reader& r, F1&& f1, F2&& f2,
     }
 }
 
-// E = E, ("+" / "-"), T / T;
+// E = E, ("+" / "-"), E / T;
 static OptExpr E(const recursion_context& recur, reader& r);
 
 // T = int / "(", E, ")";
@@ -49,7 +49,7 @@ static OptExpr E(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
-        // E, ("+" / "-"), T
+        // E, ("+" / "-"), E
         [](const recursion_context& recur, reader& r) -> OptExpr {
             static constexpr auto OP_PLUS = token::symbol::OP_PLUS;
             static constexpr auto OP_MINUS = token::symbol::OP_MINUS;
@@ -64,14 +64,14 @@ static OptExpr E(const recursion_context& recur, reader& r)
                 return std::nullopt;
             }
 
-            auto t = recur.enter<T>(r);
-            if (!t) {
+            auto e2 = recur.right1<E>(r);
+            if (!e2) {
                 return std::nullopt;
             }
             if (op == OP_PLUS) {
-                return ast::SumExpr{std::move(*e), std::move(*t)};
+                return ast::SumExpr{std::move(*e), std::move(*e2)};
             } else { assert(op == OP_MINUS);
-                return ast::SubtractExpr{std::move(*e), std::move(*t)};
+                return ast::SubtractExpr{std::move(*e), std::move(*e2)};
             }
         },
         // T
