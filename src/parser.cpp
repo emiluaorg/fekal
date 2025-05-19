@@ -13,13 +13,13 @@ using recursion_context =
     basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
 using OptExpr = std::optional<ast::Expr>;
 
-// SumExpr = SumExpr, ("+" / "-"), SumExpr / MulExpr;
+// SumExpr <- SumExpr ('+' / '-') Right1(SumExpr) / MulExpr
 static OptExpr SumExpr(const recursion_context& recur, reader& r);
 
-// MulExpr = MulExpr, ("*" / "/"), MulExpr / Term;
+// MulExpr <- MulExpr ('*' / '/') Right1(MulExpr) / Term
 static OptExpr MulExpr(const recursion_context& recur, reader& r);
 
-// Term = int / "(", SumExpr, ")";
+// Term <- int / '(' SumExpr ')'
 static OptExpr Term(const recursion_context& recur, reader& r);
 
 struct recursion_context_rules
@@ -32,7 +32,7 @@ static OptExpr SumExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
-        // SumExpr, ("+" / "-"), SumExpr
+        // SumExpr ('+' / '-') Right1(SumExpr)
         [](const recursion_context& recur, reader& r) -> OptExpr {
             static constexpr auto OP_PLUS = token::symbol::OP_PLUS;
             static constexpr auto OP_MINUS = token::symbol::OP_MINUS;
@@ -67,7 +67,7 @@ static OptExpr MulExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
-        // MulExpr, ("*" / "/"), MulExpr
+        // MulExpr ('*' / '/') Right1(MulExpr)
         [](const recursion_context& recur, reader& r) -> OptExpr {
             static constexpr auto OP_MUL = token::symbol::OP_MUL;
             static constexpr auto OP_DIV = token::symbol::OP_DIV;
@@ -110,7 +110,7 @@ static OptExpr Term(const recursion_context& recur, reader& r)
                 return std::nullopt;
             }
         },
-        // "(", SumExpr, ")"
+        // '(' SumExpr ')'
         [](const recursion_context& recur, reader& r) -> OptExpr {
             if (r.symbol() != token::symbol::LPAREN || !r.next()) {
                 return std::nullopt;
