@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <optional>
 #include <cassert>
+#include <vector>
 
 namespace fekal {
 
@@ -27,22 +29,58 @@ using recursion_context_fn_type =
 
 template<
     class T, class Reader, class Rules,
-    recursion_context_fn_type<T, Reader, Rules>
+    recursion_context_fn_type<T, Reader, Rules>,
+    class Type
 >
-struct recursion_context_tagged_optional : std::optional<unsigned>
+struct recursion_context_tagged_type : Type
 {};
+
+template<
+    class T, class Reader, class Rules,
+    recursion_context_fn_type<T, Reader, Rules> Fn
+>
+using recursion_context_tagged_optional = recursion_context_tagged_type<
+    T, Reader, Rules, Fn, std::optional<unsigned>>;
 
 template<class T, class Reader, class Rules>
 struct basic_recursion_context
 {
     using fn_type = recursion_context_fn_type<T, Reader, Rules>;
 
+    template<fn_type Fn, class T2>
+    using tagged_type = recursion_context_tagged_type<T, Reader, Rules, Fn, T2>;
+
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+    using cache_type = Rules::cache_type;
+
+    template<fn_type Fn>
+    std::unordered_map<
+        const void*, std::vector<std::pair<std::optional<T>, Reader>>
+    >& cache_for() const
+    {
+        return static_cast<tagged_type<Fn, std::unordered_map<
+            const void*, std::vector<std::pair<std::optional<T>, Reader>>
+        >>&>(*cache);
+    }
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+
+#if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
     basic_recursion_context(const Reader& reader) : reader{reader} {}
+#else // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+    basic_recursion_context(cache_type& cache, const Reader& reader)
+        : cache{&cache}
+        , reader{reader}
+    {}
+#endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
 
     template<fn_type Fn>
     std::optional<T> enter(Reader& reader) const
     {
+#if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         basic_recursion_context inner{reader};
+#else // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+        basic_recursion_context inner{*cache, reader};
+#endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         if (this->reader == reader) { // left-recursion
             // inherit and enforce current limits
             inner = *this;
@@ -53,15 +91,37 @@ struct basic_recursion_context
                 }
 
                 --*lim;
+
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+                if (
+                    auto& c = cache_for<Fn>()[reader.literal().data()] ;
+                    *lim < c.size()
+                ) {
+                    reader = c[*lim].second;
+                    return c[*lim].first;
+                }
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+
                 return Fn(inner, reader);
             }
         } else {
             assert(this->reader < reader);
         }
 
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+        auto& c = cache_for<Fn>()[reader.literal().data()];
+        if (c.size() > 0) {
+            reader = c.back().second;
+            return c.back().first;
+        }
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+
         auto& limit = inner.limit<Fn>().emplace(0);
         auto backup = reader;
         auto last_res = Fn(inner, reader);
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+        c.emplace_back(last_res, reader);
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         if (!last_res) {
             return last_res;
         }
@@ -75,6 +135,9 @@ struct basic_recursion_context
                 using std::swap;
                 swap(last_res, res);
                 reader = r2;
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+                c.emplace_back(last_res, reader);
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
             } else {
                 break;
             }
@@ -88,7 +151,11 @@ struct basic_recursion_context
     std::optional<T> right1(Reader& reader) const
     {
         assert(this->reader < reader);
+#if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         basic_recursion_context inner{reader};
+#else // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+        basic_recursion_context inner{*cache, reader};
+#endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         inner.limit<Fn>().emplace(0);
         return Fn(inner, reader);
     }
@@ -96,14 +163,51 @@ struct basic_recursion_context
     template<fn_type Fn>
     std::optional<unsigned>& limit()
     {
-        using tagged_type = recursion_context_tagged_optional<
-            T, Reader, Rules, Fn>;
-        return static_cast<tagged_type&>(limits);
+        return static_cast<tagged_type<Fn, std::optional<unsigned>>&>(limits);
     }
 
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+    cache_type* cache;
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
     Reader reader;
     Rules limits;
 };
+
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+template<
+    class T, class Reader, class Rules,
+    recursion_context_fn_type<T, Reader, Rules> Tag,
+    recursion_context_fn_type<T, Reader, Rules>... Tail
+>
+struct recursion_context_cache_type;
+
+template<
+    class T, class Reader, class Rules,
+    recursion_context_fn_type<T, Reader, Rules> Tag
+>
+struct recursion_context_cache_type<T, Reader, Rules, Tag>
+    : recursion_context_tagged_type<
+        T, Reader, Rules, Tag,
+        std::unordered_map<
+            const void*, std::vector<std::pair<std::optional<T>, Reader>>
+        >>
+{};
+
+template<
+    class T, class Reader, class Rules,
+    recursion_context_fn_type<T, Reader, Rules> Tag1,
+    recursion_context_fn_type<T, Reader, Rules> Tag2,
+    recursion_context_fn_type<T, Reader, Rules>... Tail
+>
+struct recursion_context_cache_type<T, Reader, Rules, Tag1, Tag2, Tail...>
+    : recursion_context_tagged_type<
+        T, Reader, Rules, Tag1,
+        std::unordered_map<
+            const void*, std::vector<std::pair<std::optional<T>, Reader>>
+        >>
+    , recursion_context_cache_type<T, Reader, Rules, Tag2, Tail...>
+{};
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
 
 template<
     class T, class Reader, class Rules,
@@ -118,7 +222,11 @@ template<
 >
 struct basic_recursion_context_rules<T, Reader, Rules, Tag>
     : recursion_context_tagged_optional<T, Reader, Rules, Tag>
-{};
+{
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+    using cache_type = recursion_context_cache_type<T, Reader, Rules, Tag>;
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+};
 
 template<
     class T, class Reader, class Rules,
@@ -129,6 +237,11 @@ template<
 struct basic_recursion_context_rules<T, Reader, Rules, Tag1, Tag2, Tail...>
     : recursion_context_tagged_optional<T, Reader, Rules, Tag1>
     , basic_recursion_context_rules<T, Reader, Rules, Tag2, Tail...>
-{};
+{
+#if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+    using cache_type = recursion_context_cache_type<
+        T, Reader, Rules, Tag1, Tag2, Tail...>;
+#endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+};
 
 } // namespace fekal

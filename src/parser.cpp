@@ -132,7 +132,12 @@ ast::Expr parse(std::string_view input)
         throw std::runtime_error{"empty tree"};
     }
 
+#if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
     auto e = recursion_context{r}.enter<SumExpr>(r);
+#else // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
+    recursion_context::cache_type parse_cache;
+    auto e = recursion_context{parse_cache, r}.enter<SumExpr>(r);
+#endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
     if (!e) {
         throw std::runtime_error{"no match"};
     }
