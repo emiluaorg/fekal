@@ -8,8 +8,6 @@
 
 namespace fekal {
 
-using ast::make_expr;
-
 struct recursion_context_rules;
 using recursion_context =
     basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
@@ -45,6 +43,8 @@ static OptExpr SumExpr(const recursion_context& recur, reader& r)
             }
 
             auto op = r.symbol();
+            auto l = r.line();
+            auto c = r.column();
             if ((op != OP_PLUS && op != OP_MINUS) || !r.next()) {
                 return nullptr;
             }
@@ -54,10 +54,11 @@ static OptExpr SumExpr(const recursion_context& recur, reader& r)
                 return nullptr;
             }
             if (op == OP_PLUS) {
-                return make_expr<ast::SumExpr>(std::move(s1), std::move(s2));
+                return ast::make_expr<ast::SumExpr>(
+                    l, c, std::move(s1), std::move(s2));
             } else { assert(op == OP_MINUS);
-                return make_expr<ast::SubtractExpr>(
-                    std::move(s1), std::move(s2));
+                return ast::make_expr<ast::SubtractExpr>(
+                    l, c, std::move(s1), std::move(s2));
             }
         },
         // MulExpr
@@ -81,6 +82,8 @@ static OptExpr MulExpr(const recursion_context& recur, reader& r)
             }
 
             auto op = r.symbol();
+            auto l = r.line();
+            auto c = r.column();
             if ((op != OP_MUL && op != OP_DIV) || !r.next()) {
                 return nullptr;
             }
@@ -90,9 +93,11 @@ static OptExpr MulExpr(const recursion_context& recur, reader& r)
                 return nullptr;
             }
             if (op == OP_MUL) {
-                return make_expr<ast::MulExpr>(std::move(m1), std::move(m2));
+                return ast::make_expr<ast::MulExpr>(
+                    l, c, std::move(m1), std::move(m2));
             } else { assert(op == OP_DIV);
-                return make_expr<ast::DivExpr>(std::move(m1), std::move(m2));
+                return ast::make_expr<ast::DivExpr>(
+                    l, c, std::move(m1), std::move(m2));
             }
         },
         // Term
@@ -108,8 +113,8 @@ static OptExpr Term(const recursion_context& recur, reader& r)
         // int
         [](const recursion_context& recur, reader& r) -> OptExpr {
             if (r.symbol() == token::symbol::LIT_INT) {
-                return make_expr<ast::IntLit>(
-                    r.value<token::symbol::LIT_INT>());
+                return ast::make_expr<ast::IntLit>(
+                    r.line(), r.column(), r.value<token::symbol::LIT_INT>());
             } else {
                 return nullptr;
             }

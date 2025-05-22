@@ -94,10 +94,14 @@ struct Expr : boost::mp11::mp_apply<std::variant, Exprs>
 };
 
 template<class E, class... Args>
-inline std::shared_ptr<ast::Expr> make_expr(Args&&... args)
+inline std::shared_ptr<ast::Expr> make_expr(
+    unsigned line, unsigned column, Args&&... args)
 {
-    return std::make_shared<ast::Expr>(
+    auto ret = std::make_shared<ast::Expr>(
         std::in_place_type<E>, std::forward<Args>(args)...);
+    ret->line = line;
+    ret->column = column;
+    return ret;
 }
 
 inline SumExpr::SumExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
