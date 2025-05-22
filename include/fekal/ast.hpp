@@ -20,15 +20,11 @@ struct IntLit
 
 struct SumExpr
 {
-    SumExpr(Expr left, Expr right);
+    SumExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right);
     SumExpr(SumExpr&& o) = default;
+    SumExpr(const SumExpr& o) = default;
 
-    SumExpr(const SumExpr& o)
-        : left{std::make_unique<Expr>(*o.left)}
-        , right{std::make_unique<Expr>(*o.right)}
-    {}
-
-    std::unique_ptr<Expr> left, right;
+    std::shared_ptr<Expr> left, right;
 };
 
 inline void swap(SumExpr& a, SumExpr& b)
@@ -40,15 +36,11 @@ inline void swap(SumExpr& a, SumExpr& b)
 
 struct SubtractExpr
 {
-    SubtractExpr(Expr left, Expr right);
+    SubtractExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right);
     SubtractExpr(SubtractExpr&& o) = default;
+    SubtractExpr(const SubtractExpr& o) = default;
 
-    SubtractExpr(const SubtractExpr& o)
-        : left{std::make_unique<Expr>(*o.left)}
-        , right{std::make_unique<Expr>(*o.right)}
-    {}
-
-    std::unique_ptr<Expr> left, right;
+    std::shared_ptr<Expr> left, right;
 };
 
 inline void swap(SubtractExpr& a, SubtractExpr& b)
@@ -60,15 +52,11 @@ inline void swap(SubtractExpr& a, SubtractExpr& b)
 
 struct MulExpr
 {
-    MulExpr(Expr left, Expr right);
+    MulExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right);
     MulExpr(MulExpr&& o) = default;
+    MulExpr(const MulExpr& o) = default;
 
-    MulExpr(const MulExpr& o)
-        : left{std::make_unique<Expr>(*o.left)}
-        , right{std::make_unique<Expr>(*o.right)}
-    {}
-
-    std::unique_ptr<Expr> left, right;
+    std::shared_ptr<Expr> left, right;
 };
 
 inline void swap(MulExpr& a, MulExpr& b)
@@ -80,15 +68,11 @@ inline void swap(MulExpr& a, MulExpr& b)
 
 struct DivExpr
 {
-    DivExpr(Expr left, Expr right);
+    DivExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right);
     DivExpr(DivExpr&& o) = default;
+    DivExpr(const DivExpr& o) = default;
 
-    DivExpr(const DivExpr& o)
-        : left{std::make_unique<Expr>(*o.left)}
-        , right{std::make_unique<Expr>(*o.right)}
-    {}
-
-    std::unique_ptr<Expr> left, right;
+    std::shared_ptr<Expr> left, right;
 };
 
 inline void swap(DivExpr& a, DivExpr& b)
@@ -109,24 +93,32 @@ struct Expr : boost::mp11::mp_apply<std::variant, Exprs>
     unsigned column = 0;
 };
 
-inline SumExpr::SumExpr(Expr left, Expr right)
-    : left{std::make_unique<Expr>(std::move(left))}
-    , right{std::make_unique<Expr>(std::move(right))}
+template<class E, class... Args>
+inline std::shared_ptr<ast::Expr> make_expr(Args&&... args)
+{
+    return std::make_shared<ast::Expr>(
+        std::in_place_type<E>, std::forward<Args>(args)...);
+}
+
+inline SumExpr::SumExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
+    : left{std::move(left)}
+    , right{std::move(right)}
 {}
 
-inline SubtractExpr::SubtractExpr(Expr left, Expr right)
-    : left{std::make_unique<Expr>(std::move(left))}
-    , right{std::make_unique<Expr>(std::move(right))}
+inline SubtractExpr::SubtractExpr(
+    std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
+    : left{std::move(left)}
+    , right{std::move(right)}
 {}
 
-inline MulExpr::MulExpr(Expr left, Expr right)
-    : left{std::make_unique<Expr>(std::move(left))}
-    , right{std::make_unique<Expr>(std::move(right))}
+inline MulExpr::MulExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
+    : left{std::move(left)}
+    , right{std::move(right)}
 {}
 
-inline DivExpr::DivExpr(Expr left, Expr right)
-    : left{std::make_unique<Expr>(std::move(left))}
-    , right{std::make_unique<Expr>(std::move(right))}
+inline DivExpr::DivExpr(std::shared_ptr<Expr> left, std::shared_ptr<Expr> right)
+    : left{std::move(left)}
+    , right{std::move(right)}
 {}
 
 } // namespace ast

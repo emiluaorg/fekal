@@ -7,6 +7,7 @@
 #include <optional>
 #include <cassert>
 #include <vector>
+#include <memory>
 
 namespace fekal {
 
@@ -24,7 +25,7 @@ struct basic_recursion_context;
 
 template<class T, class Reader, class Rules>
 using recursion_context_fn_type =
-    std::optional<T>(*)(
+    std::shared_ptr<T>(*)(
         const basic_recursion_context<T, Reader, Rules>&, Reader&);
 
 template<
@@ -55,11 +56,11 @@ struct basic_recursion_context
 
     template<fn_type Fn>
     std::unordered_map<
-        const void*, std::vector<std::pair<std::optional<T>, Reader>>
+        const void*, std::vector<std::pair<std::shared_ptr<T>, Reader>>
     >& cache_for() const
     {
         return static_cast<tagged_type<Fn, std::unordered_map<
-            const void*, std::vector<std::pair<std::optional<T>, Reader>>
+            const void*, std::vector<std::pair<std::shared_ptr<T>, Reader>>
         >>&>(*cache);
     }
 #endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
@@ -74,7 +75,7 @@ struct basic_recursion_context
 #endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
 
     template<fn_type Fn>
-    std::optional<T> enter(Reader& reader) const
+    std::shared_ptr<T> enter(Reader& reader) const
     {
 #if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         basic_recursion_context inner{reader};
@@ -87,7 +88,7 @@ struct basic_recursion_context
 
             if (auto& lim = inner.limit<Fn>() ; lim) {
                 if (*lim == 0) {
-                    return std::nullopt;
+                    return nullptr;
                 }
 
                 --*lim;
@@ -148,7 +149,7 @@ struct basic_recursion_context
 
     // useful to define left-to-right associativity
     template<fn_type Fn>
-    std::optional<T> right1(Reader& reader) const
+    std::shared_ptr<T> right1(Reader& reader) const
     {
         assert(this->reader < reader);
 #if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
@@ -189,7 +190,7 @@ struct recursion_context_cache_type<T, Reader, Rules, Tag>
     : recursion_context_tagged_type<
         T, Reader, Rules, Tag,
         std::unordered_map<
-            const void*, std::vector<std::pair<std::optional<T>, Reader>>
+            const void*, std::vector<std::pair<std::shared_ptr<T>, Reader>>
         >>
 {};
 
@@ -203,7 +204,7 @@ struct recursion_context_cache_type<T, Reader, Rules, Tag1, Tag2, Tail...>
     : recursion_context_tagged_type<
         T, Reader, Rules, Tag1,
         std::unordered_map<
-            const void*, std::vector<std::pair<std::optional<T>, Reader>>
+            const void*, std::vector<std::pair<std::shared_ptr<T>, Reader>>
         >>
     , recursion_context_cache_type<T, Reader, Rules, Tag2, Tail...>
 {};
