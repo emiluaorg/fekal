@@ -70,6 +70,15 @@ template<>
 std::string reader::value<token::symbol::IDENTIFIER>() const;
 
 template<>
-std::int64_t reader::value<token::symbol::LIT_INT>() const;
+std::int64_t reader::value<token::symbol::LIT_BIN>() const;
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_OCT>() const;
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_DEC>() const;
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_HEX>() const;
 
 } // namespace fekal

@@ -45,7 +45,10 @@ BOOST_DEFINE_ENUM_CLASS(
     OP_LTE, // <=
     OP_GT, // >
     OP_GTE, // >=
-    LIT_INT,
+    LIT_BIN,
+    LIT_OCT,
+    LIT_DEC,
+    LIT_HEX,
     KW_POLICY,
     KW_ALLOW,
     KW_LOG,
@@ -64,7 +67,16 @@ using value_type = decltype(+boost::hana::make_map(
         boost::hana::int_c<static_cast<int>(symbol::IDENTIFIER)>,
         boost::hana::type_c<std::string>),
     boost::hana::make_pair(
-        boost::hana::int_c<static_cast<int>(symbol::LIT_INT)>,
+        boost::hana::int_c<static_cast<int>(symbol::LIT_BIN)>,
+        boost::hana::type_c<std::int64_t>),
+    boost::hana::make_pair(
+        boost::hana::int_c<static_cast<int>(symbol::LIT_OCT)>,
+        boost::hana::type_c<std::int64_t>),
+    boost::hana::make_pair(
+        boost::hana::int_c<static_cast<int>(symbol::LIT_DEC)>,
+        boost::hana::type_c<std::int64_t>),
+    boost::hana::make_pair(
+        boost::hana::int_c<static_cast<int>(symbol::LIT_HEX)>,
         boost::hana::type_c<std::int64_t>)
 )[boost::hana::int_c<static_cast<int>(S)>])::type;
 

@@ -28,7 +28,57 @@ std::string reader::value<token::symbol::IDENTIFIER>() const
 }
 
 template<>
-std::int64_t reader::value<token::symbol::LIT_INT>() const
+std::int64_t reader::value<token::symbol::LIT_BIN>() const
+{
+    static constexpr auto from_chars = [](std::string_view v, auto& out) {
+        return std::from_chars(v.data(), v.data() + v.size(), out, 2).ec;
+    };
+
+    std::string_view v = literal();
+    if (v[0] == '-') {
+        v.remove_prefix(3);
+        std::int64_t ret;
+        if (auto ec = from_chars(v, ret) ; ec != std::errc{}) {
+            throw std::system_error{std::make_error_code(ec)};
+        }
+        return -ret;
+    } else {
+        v.remove_prefix(2);
+        std::uint64_t ret;
+        if (auto ec = from_chars(v, ret) ; ec != std::errc{}) {
+            throw std::system_error{std::make_error_code(ec)};
+        }
+        return ret;
+    }
+}
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_OCT>() const
+{
+    static constexpr auto from_chars = [](std::string_view v, auto& out) {
+        return std::from_chars(v.data(), v.data() + v.size(), out, 8).ec;
+    };
+
+    std::string_view v = literal();
+    if (v[0] == '-') {
+        v.remove_prefix(3);
+        std::int64_t ret;
+        if (auto ec = from_chars(v, ret) ; ec != std::errc{}) {
+            throw std::system_error{std::make_error_code(ec)};
+        }
+        return -ret;
+    } else {
+        v.remove_prefix(2);
+        std::uint64_t ret;
+        if (auto ec = from_chars(v, ret) ; ec != std::errc{}) {
+            throw std::system_error{std::make_error_code(ec)};
+        }
+        return ret;
+    }
+}
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_DEC>() const
 {
     std::string_view v = literal();
     std::int64_t ret;
@@ -37,6 +87,31 @@ std::int64_t reader::value<token::symbol::LIT_INT>() const
         throw std::system_error{std::make_error_code(ec)};
     }
     return ret;
+}
+
+template<>
+std::int64_t reader::value<token::symbol::LIT_HEX>() const
+{
+    static constexpr auto from_chars = [](std::string_view v, auto& out) {
+        return std::from_chars(v.data(), v.data() + v.size(), out, 16).ec;
+    };
+
+    std::string_view v = literal();
+    if (v[0] == '-') {
+        v.remove_prefix(3);
+        std::int64_t ret;
+        if (auto ec = from_chars(v, ret) ; ec != std::errc{}) {
+            throw std::system_error{std::make_error_code(ec)};
+        }
+        return -ret;
+    } else {
+        v.remove_prefix(2);
+        std::uint64_t ret;
+        if (auto ec = from_chars(v, ret) ; ec != std::errc{}) {
+            throw std::system_error{std::make_error_code(ec)};
+        }
+        return ret;
+    }
 }
 
 unsigned reader::line() const
@@ -77,8 +152,10 @@ bool reader::next()
         re2c:define:YYBACKUP = "backup = cursor;";
         re2c:define:YYRESTORE = "cursor = backup;";
 
-        int32lit = [0-9]+;
-        doublelit = [0-9]+[.][0-9]+;
+        binlit = "-"? "0"[bB] [01]+;
+        octlit = "-"? "0"[oO] [0-7]+;
+        declit = "-"? [1-9][0-9]* | [0];
+        hexlit = "-"? "0"[xX] [0-9a-fA-F]+;
         identifier = [a-zA-Z_][a-zA-Z0-9_]*;
         end = "\x00";
         lws = [ ]+;
@@ -118,7 +195,10 @@ bool reader::next()
         "<=" { symbol_ = token::symbol::OP_LTE; return true; }
         ">" { symbol_ = token::symbol::OP_GT; return true; }
         ">=" { symbol_ = token::symbol::OP_GTE; return true; }
-        {int32lit} { symbol_ = token::symbol::LIT_INT; return true; }
+        {binlit} { symbol_ = token::symbol::LIT_BIN; return true; }
+        {octlit} { symbol_ = token::symbol::LIT_OCT; return true; }
+        {declit} { symbol_ = token::symbol::LIT_DEC; return true; }
+        {hexlit} { symbol_ = token::symbol::LIT_HEX; return true; }
         "POLICY" { symbol_ = token::symbol::KW_POLICY; return true; }
         "ALLOW" { symbol_ = token::symbol::KW_ALLOW; return true; }
         "LOG" { symbol_ = token::symbol::KW_LOG; return true; }

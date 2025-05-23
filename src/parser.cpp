@@ -112,9 +112,18 @@ static OptExpr Term(const recursion_context& recur, reader& r)
         recur, r,
         // int
         [](const recursion_context& recur, reader& r) -> OptExpr {
-            if (r.symbol() == token::symbol::LIT_INT) {
+            if (r.symbol() == token::symbol::LIT_BIN) {
                 return ast::make_expr<ast::IntLit>(
-                    r.line(), r.column(), r.value<token::symbol::LIT_INT>());
+                    r.line(), r.column(), r.value<token::symbol::LIT_BIN>());
+            } else if (r.symbol() == token::symbol::LIT_OCT) {
+                return ast::make_expr<ast::IntLit>(
+                    r.line(), r.column(), r.value<token::symbol::LIT_OCT>());
+            } else if (r.symbol() == token::symbol::LIT_DEC) {
+                return ast::make_expr<ast::IntLit>(
+                    r.line(), r.column(), r.value<token::symbol::LIT_DEC>());
+            } else if (r.symbol() == token::symbol::LIT_HEX) {
+                return ast::make_expr<ast::IntLit>(
+                    r.line(), r.column(), r.value<token::symbol::LIT_HEX>());
             } else {
                 return nullptr;
             }
