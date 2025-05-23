@@ -199,7 +199,9 @@ bool reader::next()
         {octlit} { symbol_ = token::symbol::LIT_OCT; return true; }
         {declit} { symbol_ = token::symbol::LIT_DEC; return true; }
         {hexlit} { symbol_ = token::symbol::LIT_HEX; return true; }
+        "USE" { symbol_ = token::symbol::KW_USE; return true; }
         "POLICY" { symbol_ = token::symbol::KW_POLICY; return true; }
+        "DEFAULT" { symbol_ = token::symbol::KW_DEFAULT; return true; }
         "ALLOW" { symbol_ = token::symbol::KW_ALLOW; return true; }
         "LOG" { symbol_ = token::symbol::KW_LOG; return true; }
         "KILL_PROCESS" {
