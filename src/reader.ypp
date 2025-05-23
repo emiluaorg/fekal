@@ -218,6 +218,10 @@ bool reader::next()
             begin = cursor;
             continue;
         }
+        "\t" {
+            throw std::runtime_error{
+                "tabulation character only supported in comments"};
+        }
         "\r" {
             throw std::runtime_error{"CR not supported for end of line"};
         }
