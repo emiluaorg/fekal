@@ -3,6 +3,7 @@
 
 #include <fekal/reader.hpp>
 #include <system_error>
+#include <algorithm>
 #include <stdexcept>
 #include <charconv>
 #include <cassert>
@@ -224,6 +225,48 @@ bool reader::next()
             ++line_;
             column_ = 0;
             ++begin;
+            continue;
+        }
+        "//" {
+            auto t = tail();
+            auto idx = t.find_first_of("\r\n");
+            if (idx == t.npos) {
+                begin = cursor = end;
+                return false;
+            }
+            if (t[idx] == '\r') {
+                throw std::runtime_error{"CR not supported for end of line"};
+            }
+            ++line_;
+            column_ = 0;
+            t.remove_prefix(idx + /*strlen("\n")=*/1);
+            begin = cursor = t.data();
+            continue;
+        }
+        "/*" {
+            auto t = tail();
+            auto idx = t.find("*/");
+            if (idx == t.npos) {
+                throw std::runtime_error{
+                    "missing delimiter to end multi-line comment"};
+            }
+            {
+                auto c = t.substr(0, idx);
+                if (c.find('\r') != c.npos) {
+                    throw std::runtime_error{
+                        "CR not supported for end of line"};
+                }
+                if (auto lfcount = std::ranges::count(c, '\n') ; lfcount > 0) {
+                    line_ += lfcount;
+                    c.remove_prefix(c.rfind('\n') + 1);
+                    column_ = c.size() + /*strlen("*""/")=*/2;
+                } else {
+                    column_ += /*strlen("/""*")=*/2 + c.size() +
+                        /*strlen("*""/")=*/2;
+                }
+            }
+            t.remove_prefix(idx + /*strlen("*""/")=*/2);
+            begin = cursor = t.data();
             continue;
         }
         %}
