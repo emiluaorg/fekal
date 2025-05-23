@@ -217,6 +217,9 @@ bool reader::next()
             begin = cursor;
             continue;
         }
+        "\r" {
+            throw std::runtime_error{"CR not supported for end of line"};
+        }
         "\n" {
             ++line_;
             column_ = 0;
