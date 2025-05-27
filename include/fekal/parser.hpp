@@ -8,6 +8,6 @@
 
 namespace fekal {
 
-ast::Expr parse(std::string_view input);
+std::vector<ast::ProgramStatement> parse(std::string_view input);
 
 } // namespace fekal

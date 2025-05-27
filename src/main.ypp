@@ -37,8 +37,7 @@ int main(int argc, char* argv[])
     std::ifstream in{argv[1], std::ios::in | std::ios::binary};
     std::string source = read_file(in);
     try {
-        int res = fekal::eval(fekal::parse(source));
-        std::cout << "Result: " << res << std::endl;
+        fekal::parse(source);
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }

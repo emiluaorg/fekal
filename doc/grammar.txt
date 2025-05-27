@@ -1,0 +1,31 @@
+ProgramStatements <- ProgramStatement* EOF
+ProgramStatement <- Policy
+                  / PolicyStatement
+                  / "DEFAULT" Action
+Policy <- "POLICY" IDENTIFIER '{' (PolicyStatement ',')* PolicyStatement? '}'
+PolicyStatement <- UseStatement / ActionBlock
+UseStatement <- "USE" IDENTIFIER
+ActionBlock <- Action '{' (SyscallFilter ',')* SyscallFilter? '}'
+Action <- "ALLOW"
+        / "LOG"
+        / "KILL_PROCESS"
+        / "KILL_THREAD"
+        / "USER_NOTIF"
+        / "ERRNO" '(' (IDENTIFIER / INTEGER) ')'
+        / "TRAP" '(' INTEGER ')'
+        / "TRACE" '(' INTEGER ')'
+SyscallFilter <- IDENTIFIER SyscallParamsAndBody?
+SyscallParamsAndBody <- '(' SyscallParams? ')'
+                        '{' (OrExpr ',')* OrExpr? '}'
+SyscallParams <- (IDENTIFIER ',')* IDENTIFIER
+OrExpr <- OrExpr "||" AndExpr / AndExpr
+AndExpr <- AndExpr "&&" RelOpExpr / RelOpExpr
+RelOpExpr <- BitOrExpr ("==" / "!=" / "<" / ">" / "<=" / ">=") BitOrExpr
+           / '!'? '(' OrExpr ')'
+BitOrExpr <- BitOrExpr '|' BitXorExpr / BitXorExpr
+BitXorExpr <- BitXorExpr '^' BitAndExpr / BitAndExpr
+BitAndExpr <- BitAndExpr '&' BitShiftExpr / BitShiftExpr
+BitShiftExpr <- BitShiftExpr ("<<" / ">>") SumExpr / SumExpr
+SumExpr <- SumExpr ('+' / '-') MulExpr / MulExpr
+MulExpr <- MulExpr ('*' / '/') Term / Term
+Term <- INTEGER / IDENTIFIER / '(' BitOrExpr ')'
