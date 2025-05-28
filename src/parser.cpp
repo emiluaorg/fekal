@@ -61,19 +61,37 @@ struct recursion_context_rules
         BitShiftExpr, SumExpr, MulExpr, Term>
 {};
 
-static std::optional<std::int64_t> INTEGER(const reader& r)
+template<token::symbol S>
+static inline bool expect(reader& r)
 {
+    if (S == token::symbol::END) {
+        return r.symbol() == token::symbol::END;
+    }
+
+    if (r.symbol() == S) {
+        r.next();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static inline std::optional<std::int64_t> INTEGER(reader& r)
+{
+    std::int64_t ret;
     if (r.symbol() == token::symbol::LIT_BIN) {
-        return r.value<token::symbol::LIT_BIN>();
+        ret = r.value<token::symbol::LIT_BIN>();
     } else if (r.symbol() == token::symbol::LIT_OCT) {
-        return r.value<token::symbol::LIT_OCT>();
+        ret = r.value<token::symbol::LIT_OCT>();
     } else if (r.symbol() == token::symbol::LIT_DEC) {
-        return r.value<token::symbol::LIT_DEC>();
+        ret = r.value<token::symbol::LIT_DEC>();
     } else if (r.symbol() == token::symbol::LIT_HEX) {
-        return r.value<token::symbol::LIT_HEX>();
+        ret = r.value<token::symbol::LIT_HEX>();
     } else {
         return std::nullopt;
     }
+    r.next();
+    return ret;
 }
 
 static
@@ -88,11 +106,7 @@ ProgramStatement(const recursion_context& recur, reader& r)
         return *res;
     } else if (auto res = ((r = backup), ActionBlock(recur, r)) ; res) {
         return *res;
-    } else if (backup.symbol() == token::symbol::KW_DEFAULT) {
-        r = backup;
-        if (!r.next()) {
-            return {};
-        }
+    } else if ((r = backup), expect<token::symbol::KW_DEFAULT>(r)) {
         return std::visit(hana::overload(
             [](const std::monostate&) -> Ret { return {}; },
             [](const auto& v) -> Ret { return ast::DefaultAction{v}; }
@@ -106,15 +120,16 @@ static
 std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
 {
     if (
-        r.symbol() != token::symbol::KW_POLICY || !r.next() ||
+        !expect<token::symbol::KW_POLICY>(r) ||
         r.symbol() != token::symbol::IDENTIFIER
     ) {
         return std::nullopt;
     }
 
     std::string name = r.value<token::symbol::IDENTIFIER>();
+    r.next();
 
-    if (!r.next() || r.symbol() != token::symbol::LBRACE || !r.next()) {
+    if (!expect<token::symbol::LBRACE>(r)) {
         return std::nullopt;
     }
 
@@ -127,14 +142,10 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
                 stmts.emplace_back(std::move(stmt)); return true; }
         ), PolicyStatement(recur, r));
         if (found) {
-            if (r.next()) {
-                continue;
-            } else {
-                return std::nullopt;
-            }
+            continue;
         } else {
             r = backup;
-            if (r.symbol() == token::symbol::RBRACE) {
+            if (expect<token::symbol::RBRACE>(r)) {
                 return ast::Policy{std::move(name), std::move(stmts)};
             } else {
                 return std::nullopt;
@@ -162,13 +173,15 @@ std::optional<ast::UseStatement>
 UseStatement(const recursion_context& recur, reader& r)
 {
     if (
-        r.symbol() != token::symbol::KW_USE || !r.next() ||
+        !expect<token::symbol::KW_USE>(r) ||
         r.symbol() != token::symbol::IDENTIFIER
     ) {
         return std::nullopt;
     }
 
-    return ast::UseStatement{r.value<token::symbol::IDENTIFIER>()};
+    ast::UseStatement ret{r.value<token::symbol::IDENTIFIER>()};
+    r.next();
+    return ret;
 }
 
 static
@@ -184,7 +197,7 @@ ActionBlock(const recursion_context& recur, reader& r)
         return std::nullopt;
     }
 
-    if (!r.next() || r.symbol() != token::symbol::LBRACE || !r.next()) {
+    if (!expect<token::symbol::LBRACE>(r)) {
         return std::nullopt;
     }
 
@@ -194,24 +207,19 @@ ActionBlock(const recursion_context& recur, reader& r)
         auto filter = SyscallFilter(recur, r);
         if (filter) {
             filters.emplace_back(std::move(*filter));
-            if (!r.next()) {
-                return std::nullopt;
-            }
             switch (r.symbol()) {
             default:
                 return std::nullopt;
             case token::symbol::COMMA:
-                if (r.next()) {
-                    continue;
-                } else {
-                    return std::nullopt;
-                }
+                r.next();
+                continue;
             case token::symbol::RBRACE:
+                r.next();
                 return ast::ActionBlock{std::move(*action), std::move(filters)};
             }
         } else {
             r = backup;
-            if (r.symbol() == token::symbol::RBRACE) {
+            if (expect<token::symbol::RBRACE>(r)) {
                 return ast::ActionBlock{std::move(*action), std::move(filters)};
             } else {
                 return std::nullopt;
@@ -228,23 +236,27 @@ Action(const recursion_context& recur, reader& r)
     default:
         return {};
     case token::symbol::KW_ALLOW:
+        r.next();
         return ast::ActionAllow{};
     case token::symbol::KW_LOG:
+        r.next();
         return ast::ActionLog{};
     case token::symbol::KW_KILL_PROCESS:
+        r.next();
         return ast::ActionKillProcess{};
     case token::symbol::KW_KILL_THREAD:
+        r.next();
         return ast::ActionKillThread{};
     case token::symbol::KW_USER_NOTIF:
+        r.next();
         return ast::ActionUserNotif{};
     case token::symbol::KW_ERRNO: {
-        if (
-            !r.next() || r.symbol() != token::symbol::LPAREN || !r.next()
-        ) {
+        r.next();
+        if (!expect<token::symbol::LPAREN>(r)) {
             return {};
         }
         if (auto res = INTEGER(r) ; res) {
-            if (!r.next() || r.symbol() != token::symbol::RPAREN) {
+            if (!expect<token::symbol::RPAREN>(r)) {
                 return {};
             }
             return ast::ActionErrno{static_cast<int>(*res)};
@@ -254,11 +266,12 @@ Action(const recursion_context& recur, reader& r)
         }
     }
     case token::symbol::KW_TRAP:
-        if (!r.next() || r.symbol() != token::symbol::LPAREN || !r.next()) {
+        r.next();
+        if (!expect<token::symbol::LPAREN>(r)) {
             return {};
         }
         if (auto res = INTEGER(r) ; res) {
-            if (!r.next() || r.symbol() != token::symbol::RPAREN) {
+            if (!expect<token::symbol::RPAREN>(r)) {
                 return {};
             }
             return ast::ActionTrap{*res};
@@ -266,11 +279,12 @@ Action(const recursion_context& recur, reader& r)
             return {};
         }
     case token::symbol::KW_TRACE:
-        if (!r.next() || r.symbol() != token::symbol::LPAREN || !r.next()) {
+        r.next();
+        if (!expect<token::symbol::LPAREN>(r)) {
             return {};
         }
         if (auto res = INTEGER(r) ; res) {
-            if (!r.next() || r.symbol() != token::symbol::RPAREN) {
+            if (!expect<token::symbol::RPAREN>(r)) {
                 return {};
             }
             return ast::ActionTrace{*res};
@@ -289,13 +303,14 @@ SyscallFilter(const recursion_context& recur, reader& r)
     }
 
     std::string syscall = r.value<token::symbol::IDENTIFIER>();
+    r.next();
 
     auto return_matched = [&r,&syscall,backup=r]() {
         r = backup;
         return ast::SyscallFilter{std::move(syscall)};
     };
 
-    if (!r.next() || r.symbol() != token::symbol::LPAREN || !r.next()) {
+    if (!expect<token::symbol::LPAREN>(r)) {
         return return_matched();
     }
 
@@ -303,24 +318,19 @@ SyscallFilter(const recursion_context& recur, reader& r)
 
     if (r.symbol() == token::symbol::IDENTIFIER) {
         params.emplace_back(r.value<token::symbol::IDENTIFIER>());
-        if (!r.next()) {
-            return return_matched();
-        }
+        r.next();
     }
 
-    while (r.symbol() == token::symbol::COMMA) {
-        if (!r.next() || r.symbol() != token::symbol::IDENTIFIER) {
+    while (expect<token::symbol::COMMA>(r)) {
+        if (r.symbol() != token::symbol::IDENTIFIER) {
             return return_matched();
         }
         params.emplace_back(r.value<token::symbol::IDENTIFIER>());
-        if (!r.next()) {
-            return return_matched();
-        }
+        r.next();
     }
 
     if (
-        r.symbol() != token::symbol::RPAREN || !r.next() ||
-        r.symbol() != token::symbol::LBRACE || !r.next()
+        !expect<token::symbol::RPAREN>(r) || !expect<token::symbol::LBRACE>(r)
     ) {
         return return_matched();
     }
@@ -331,25 +341,20 @@ SyscallFilter(const recursion_context& recur, reader& r)
         auto expr = recur.enter<OrExpr>(r);
         if (expr) {
             body.emplace_back(ast::unwrap_bool_expr(expr));
-            if (!r.next()) {
-                return return_matched();
-            }
             switch (r.symbol()) {
             default:
                 return return_matched();
             case token::symbol::COMMA:
-                if (r.next()) {
-                    continue;
-                } else {
-                    return return_matched();
-                }
+                r.next();
+                continue;
             case token::symbol::RBRACE:
+                r.next();
                 return ast::SyscallFilter{
                     std::move(syscall), std::move(params), std::move(body)};
             }
         } else {
             r = backup;
-            if (r.symbol() == token::symbol::RBRACE) {
+            if (expect<token::symbol::RBRACE>(r)) {
                 return ast::SyscallFilter{
                     std::move(syscall), std::move(params), std::move(body)};
             } else {
@@ -366,13 +371,13 @@ static ExprPtr OrExpr(const recursion_context& recur, reader& r)
         // OrExpr '||' AndExpr
         [](const recursion_context& recur, reader& r) -> ExprPtr {
             auto e1 = recur.enter<OrExpr>(r);
-            if (!e1 || !r.next()) {
+            if (!e1) {
                 return nullptr;
             }
 
             auto l = r.line();
             auto c = r.column();
-            if (r.symbol() != token::symbol::OP_OR || !r.next()) {
+            if (!expect<token::symbol::OP_OR>(r)) {
                 return nullptr;
             }
 
@@ -396,13 +401,13 @@ static ExprPtr AndExpr(const recursion_context& recur, reader& r)
         // AndExpr "&&" RelOpExpr
         [](const recursion_context& recur, reader& r) -> ExprPtr {
             auto e1 = recur.enter<AndExpr>(r);
-            if (!e1 || !r.next()) {
+            if (!e1) {
                 return nullptr;
             }
 
             auto l = r.line();
             auto c = r.column();
-            if (r.symbol() != token::symbol::OP_AND || !r.next()) {
+            if (!expect<token::symbol::OP_AND>(r)) {
                 return nullptr;
             }
 
@@ -433,7 +438,7 @@ static ExprPtr RelOpExpr(const recursion_context& recur, reader& r)
             static constexpr auto OP_GTE = token::symbol::OP_GTE;
 
             auto b1 = recur.enter<BitOrExpr>(r);
-            if (!b1 || !r.next()) {
+            if (!b1) {
                 return nullptr;
             }
 
@@ -451,9 +456,7 @@ static ExprPtr RelOpExpr(const recursion_context& recur, reader& r)
             case OP_GTE:
                 break;
             }
-            if (!r.next()) {
-                return nullptr;
-            }
+            r.next();
 
             auto b2 = recur.enter<BitOrExpr>(r);
             if (!b2) {
@@ -487,16 +490,16 @@ static ExprPtr RelOpExpr(const recursion_context& recur, reader& r)
             bool is_neg = r.symbol() == token::symbol::OP_NEG;
             auto l = r.line();
             auto c = r.column();
-            if (is_neg && !r.next()) {
-                return nullptr;
+            if (is_neg) {
+                r.next();
             }
 
-            if (r.symbol() != token::symbol::LPAREN || !r.next()) {
+            if (!expect<token::symbol::LPAREN>(r)) {
                 return nullptr;
             }
 
             auto e = recur.enter<OrExpr>(r);
-            if (!e || !r.next() || r.symbol() != token::symbol::RPAREN) {
+            if (!e || !expect<token::symbol::RPAREN>(r)) {
                 return nullptr;
             }
 
@@ -515,13 +518,13 @@ static ExprPtr BitOrExpr(const recursion_context& recur, reader& r)
         // BitOrExpr '|' BitXorExpr
         [](const recursion_context& recur, reader& r) -> ExprPtr {
             auto bo = recur.enter<BitOrExpr>(r);
-            if (!bo || !r.next()) {
+            if (!bo) {
                 return nullptr;
             }
 
             auto l = r.line();
             auto c = r.column();
-            if (r.symbol() != token::symbol::OP_BOR || !r.next()) {
+            if (!expect<token::symbol::OP_BOR>(r)) {
                 return nullptr;
             }
 
@@ -545,13 +548,13 @@ static ExprPtr BitXorExpr(const recursion_context& recur, reader& r)
         // BitXorExpr '^' BitAndExpr
         [](const recursion_context& recur, reader& r) -> ExprPtr {
             auto bx = recur.enter<BitXorExpr>(r);
-            if (!bx || !r.next()) {
+            if (!bx) {
                 return nullptr;
             }
 
             auto l = r.line();
             auto c = r.column();
-            if (r.symbol() != token::symbol::OP_BXOR || !r.next()) {
+            if (!expect<token::symbol::OP_BXOR>(r)) {
                 return nullptr;
             }
 
@@ -575,13 +578,13 @@ static ExprPtr BitAndExpr(const recursion_context& recur, reader& r)
         // BitAndExpr '&' BitShiftExpr
         [](const recursion_context& recur, reader& r) -> ExprPtr {
             auto ba = recur.enter<BitAndExpr>(r);
-            if (!ba || !r.next()) {
+            if (!ba) {
                 return nullptr;
             }
 
             auto l = r.line();
             auto c = r.column();
-            if (r.symbol() != token::symbol::OP_BAND || !r.next()) {
+            if (!expect<token::symbol::OP_BAND>(r)) {
                 return nullptr;
             }
 
@@ -608,7 +611,7 @@ static ExprPtr BitShiftExpr(const recursion_context& recur, reader& r)
             static constexpr auto OP_RSHIFT = token::symbol::OP_RSHIFT;
 
             auto b = recur.enter<BitShiftExpr>(r);
-            if (!b || !r.next()) {
+            if (!b) {
                 return nullptr;
             }
 
@@ -647,7 +650,7 @@ static ExprPtr SumExpr(const recursion_context& recur, reader& r)
             static constexpr auto OP_MINUS = token::symbol::OP_MINUS;
 
             auto s = recur.enter<SumExpr>(r);
-            if (!s || !r.next()) {
+            if (!s) {
                 return nullptr;
             }
 
@@ -686,7 +689,7 @@ static ExprPtr MulExpr(const recursion_context& recur, reader& r)
             static constexpr auto OP_DIV = token::symbol::OP_DIV;
 
             auto m = recur.enter<MulExpr>(r);
-            if (!m || !r.next()) {
+            if (!m) {
                 return nullptr;
             }
 
@@ -721,8 +724,10 @@ static ExprPtr Term(const recursion_context& recur, reader& r)
         recur, r,
         // INTEGER
         [](const recursion_context& recur, reader& r) -> ExprPtr {
+            auto l = r.line();
+            auto c = r.column();
             if (auto res = INTEGER(r) ; res) {
-                return ast::make_expr<ast::IntLit>(r.line(), r.column(), *res);
+                return ast::make_expr<ast::IntLit>(l, c, *res);
             } else {
                 return nullptr;
             }
@@ -730,20 +735,22 @@ static ExprPtr Term(const recursion_context& recur, reader& r)
         // IDENTIFIER
         [](const recursion_context& recur, reader& r) -> ExprPtr {
             if (r.symbol() == token::symbol::IDENTIFIER) {
-                return ast::make_expr<ast::Identifier>(
+                auto ret = ast::make_expr<ast::Identifier>(
                     r.line(), r.column(), r.value<token::symbol::IDENTIFIER>());
+                r.next();
+                return ret;
             } else {
                 return nullptr;
             }
         },
         // '(' BitOrExpr ')'
         [](const recursion_context& recur, reader& r) -> ExprPtr {
-            if (r.symbol() != token::symbol::LPAREN || !r.next()) {
+            if (!expect<token::symbol::LPAREN>(r)) {
                 return nullptr;
             }
 
             auto e = recur.enter<BitOrExpr>(r);
-            if (!e || !r.next() || r.symbol() != token::symbol::RPAREN) {
+            if (!e || !expect<token::symbol::RPAREN>(r)) {
                 return nullptr;
             }
 
@@ -755,7 +762,7 @@ std::vector<ast::ProgramStatement> parse(std::string_view input)
 {
     std::vector<ast::ProgramStatement> ret;
 
-    for (reader r{input} ; r.symbol() != token::symbol::END ; r.next()) {
+    for (reader r{input} ; r.symbol() != token::symbol::END ;) {
 #if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         recursion_context recur{r};
 #else // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
