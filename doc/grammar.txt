@@ -2,7 +2,7 @@ ProgramStatements <- ProgramStatement* EOF
 ProgramStatement <- Policy
                   / PolicyStatement
                   / "DEFAULT" Action
-Policy <- "POLICY" IDENTIFIER '{' (PolicyStatement ',')* PolicyStatement? '}'
+Policy <- "POLICY" IDENTIFIER '{' PolicyStatement* '}'
 PolicyStatement <- UseStatement / ActionBlock
 UseStatement <- "USE" IDENTIFIER
 ActionBlock <- Action '{' (SyscallFilter ',')* SyscallFilter? '}'

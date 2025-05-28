@@ -127,20 +127,10 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
                 stmts.emplace_back(std::move(stmt)); return true; }
         ), PolicyStatement(recur, r));
         if (found) {
-            if (!r.next()) {
+            if (r.next()) {
+                continue;
+            } else {
                 return std::nullopt;
-            }
-            switch (r.symbol()) {
-            default:
-                return std::nullopt;
-            case token::symbol::COMMA:
-                if (r.next()) {
-                    continue;
-                } else {
-                    return std::nullopt;
-                }
-            case token::symbol::RBRACE:
-                return ast::Policy{std::move(name), std::move(stmts)};
             }
         } else {
             r = backup;
