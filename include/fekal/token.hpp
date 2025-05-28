@@ -19,6 +19,8 @@ namespace fekal::token {
 BOOST_DEFINE_ENUM_CLASS(
     symbol,
 
+    END, // EOF
+
     LPAREN, // (
     RPAREN, // )
     LBRACK, // [

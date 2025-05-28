@@ -754,9 +754,8 @@ static ExprPtr Term(const recursion_context& recur, reader& r)
 std::vector<ast::ProgramStatement> parse(std::string_view input)
 {
     std::vector<ast::ProgramStatement> ret;
-    reader r{input};
 
-    while (r.next()) {
+    for (reader r{input} ; r.symbol() != token::symbol::END ; r.next()) {
 #if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         recursion_context recur{r};
 #else // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
