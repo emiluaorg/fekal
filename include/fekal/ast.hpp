@@ -470,5 +470,6 @@ inline OrExpr::OrExpr(
 } // namespace ast
 
 bool eval(const std::shared_ptr<ast::Expr>& e);
+std::string format(const std::vector<ast::ProgramStatement>& program);
 
 } // namespace fekal
