@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Vinícius dos Santos Oliveira
 // SPDX-License-Identifier: MIT-0
 
-#include <fekal/recursion_context.hpp>
 #include <fekal/parser.hpp>
 #include <fekal/reader.hpp>
 #include <fekal/peg.hpp>
@@ -11,9 +10,11 @@ namespace fekal {
 namespace hana = boost::hana;
 namespace mp11 = boost::mp11;
 
+using peg::choice;
+
 struct recursion_context_rules;
 using recursion_context =
-    basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
+    peg::basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
 using ExprPtr = std::shared_ptr<ast::Expr>;
 
 static
@@ -55,7 +56,7 @@ static ExprPtr MulExpr(const recursion_context& recur, reader& r);
 static ExprPtr Term(const recursion_context& recur, reader& r);
 
 struct recursion_context_rules
-    : basic_recursion_context_rules<
+    : peg::basic_recursion_context_rules<
         ast::Expr, reader, recursion_context_rules,
         OrExpr, AndExpr, RelOpExpr, BitOrExpr, BitXorExpr, BitAndExpr,
         BitShiftExpr, SumExpr, MulExpr, Term>

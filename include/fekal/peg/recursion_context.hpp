@@ -9,7 +9,7 @@
 #include <vector>
 #include <memory>
 
-namespace fekal {
+namespace fekal::peg {
 
 // Handles left-recursion. Idea from the paper Left recursion in Parsing
 // Expression Grammars by Medeiros et al.: <http://arxiv.org/pdf/1207.0443>.
@@ -245,4 +245,4 @@ struct basic_recursion_context_rules<T, Reader, Rules, Tag1, Tag2, Tail...>
 #endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
 };
 
-} // namespace fekal
+} // namespace fekal::peg
