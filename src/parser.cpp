@@ -99,16 +99,18 @@ mp11::mp_push_front<ast::ProgramStatement, std::monostate>
 ProgramStatement(const recursion_context& recur, reader& r)
 {
     using Ret = mp11::mp_push_front<ast::ProgramStatement, std::monostate>;
-    auto backup = r;
     if (auto res = Policy(recur, r) ; res) {
         return *res;
-    } else if (auto res = ((r = backup), UseStatement(recur, r)) ; res) {
+    } else if (auto res = UseStatement(recur, r) ; res) {
         return *res;
-    } else if (auto res = ((r = backup), ActionBlock(recur, r)) ; res) {
+    } else if (auto res = ActionBlock(recur, r) ; res) {
         return *res;
-    } else if ((r = backup), expect<token::symbol::KW_DEFAULT>(r)) {
+    } else if (auto backup = r ; expect<token::symbol::KW_DEFAULT>(r)) {
         return std::visit(hana::overload(
-            [](const std::monostate&) -> Ret { return {}; },
+            [&](const std::monostate&) -> Ret {
+                r = backup;
+                return {};
+            },
             [](const auto& v) -> Ret { return ast::DefaultAction{v}; }
         ), Action(recur, r));
     } else {
@@ -119,10 +121,12 @@ ProgramStatement(const recursion_context& recur, reader& r)
 static
 std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
 {
+    auto backup = r;
     if (
         !expect<token::symbol::KW_POLICY>(r) ||
         r.symbol() != token::symbol::IDENTIFIER
     ) {
+        r = backup;
         return std::nullopt;
     }
 
@@ -130,12 +134,12 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
     r.next();
 
     if (!expect<token::symbol::LBRACE>(r)) {
+        r = backup;
         return std::nullopt;
     }
 
     std::vector<ast::PolicyStatement> stmts;
     for (;;) {
-        auto backup = r;
         bool found = std::visit(hana::overload(
             [](std::monostate&&) { return false; },
             [&](auto&& stmt) {
@@ -144,10 +148,10 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
         if (found) {
             continue;
         } else {
-            r = backup;
             if (expect<token::symbol::RBRACE>(r)) {
                 return ast::Policy{std::move(name), std::move(stmts)};
             } else {
+                r = backup;
                 return std::nullopt;
             }
         }
@@ -158,10 +162,9 @@ static
 mp11::mp_push_front<ast::PolicyStatement, std::monostate>
 PolicyStatement(const recursion_context& recur, reader& r)
 {
-    auto backup = r;
     if (auto res = UseStatement(recur, r) ; res) {
         return *res;
-    } else if (auto res = ((r = backup), ActionBlock(recur, r)) ; res) {
+    } else if (auto res = ActionBlock(recur, r) ; res) {
         return *res;
     } else {
         return {};
@@ -172,10 +175,12 @@ static
 std::optional<ast::UseStatement>
 UseStatement(const recursion_context& recur, reader& r)
 {
+    auto backup = r;
     if (
         !expect<token::symbol::KW_USE>(r) ||
         r.symbol() != token::symbol::IDENTIFIER
     ) {
+        r = backup;
         return std::nullopt;
     }
 
@@ -188,6 +193,7 @@ static
 std::optional<ast::ActionBlock>
 ActionBlock(const recursion_context& recur, reader& r)
 {
+    auto backup = r;
     std::optional<ast::Action> action;
     std::visit(hana::overload(
         [](std::monostate&&) {},
@@ -198,17 +204,18 @@ ActionBlock(const recursion_context& recur, reader& r)
     }
 
     if (!expect<token::symbol::LBRACE>(r)) {
+        r = backup;
         return std::nullopt;
     }
 
     std::vector<ast::SyscallFilter> filters;
     for (;;) {
-        auto backup = r;
         auto filter = SyscallFilter(recur, r);
         if (filter) {
             filters.emplace_back(std::move(*filter));
             switch (r.symbol()) {
             default:
+                r = backup;
                 return std::nullopt;
             case token::symbol::COMMA:
                 r.next();
@@ -218,10 +225,10 @@ ActionBlock(const recursion_context& recur, reader& r)
                 return ast::ActionBlock{std::move(*action), std::move(filters)};
             }
         } else {
-            r = backup;
             if (expect<token::symbol::RBRACE>(r)) {
                 return ast::ActionBlock{std::move(*action), std::move(filters)};
             } else {
+                r = backup;
                 return std::nullopt;
             }
         }
@@ -232,6 +239,7 @@ static
 mp11::mp_push_front<ast::Action, std::monostate>
 Action(const recursion_context& recur, reader& r)
 {
+    auto backup = r;
     switch (r.symbol()) {
     default:
         return {};
@@ -253,42 +261,51 @@ Action(const recursion_context& recur, reader& r)
     case token::symbol::KW_ERRNO: {
         r.next();
         if (!expect<token::symbol::LPAREN>(r)) {
+            r = backup;
             return {};
         }
         if (auto res = INTEGER(r) ; res) {
             if (!expect<token::symbol::RPAREN>(r)) {
+                r = backup;
                 return {};
             }
             return ast::ActionErrno{static_cast<int>(*res)};
         } else {
             // TODO: handle known errno constants
+            r = backup;
             return {};
         }
     }
     case token::symbol::KW_TRAP:
         r.next();
         if (!expect<token::symbol::LPAREN>(r)) {
+            r = backup;
             return {};
         }
         if (auto res = INTEGER(r) ; res) {
             if (!expect<token::symbol::RPAREN>(r)) {
+                r = backup;
                 return {};
             }
             return ast::ActionTrap{*res};
         } else {
+            r = backup;
             return {};
         }
     case token::symbol::KW_TRACE:
         r.next();
         if (!expect<token::symbol::LPAREN>(r)) {
+            r = backup;
             return {};
         }
         if (auto res = INTEGER(r) ; res) {
             if (!expect<token::symbol::RPAREN>(r)) {
+                r = backup;
                 return {};
             }
             return ast::ActionTrace{*res};
         } else {
+            r = backup;
             return {};
         }
     }
@@ -337,7 +354,6 @@ SyscallFilter(const recursion_context& recur, reader& r)
 
     std::vector<ast::SyscallFilter::expr_type> body;
     for (;;) {
-        auto backup = r;
         auto expr = recur.enter<OrExpr>(r);
         if (expr) {
             body.emplace_back(ast::unwrap_bool_expr(expr));
@@ -353,7 +369,6 @@ SyscallFilter(const recursion_context& recur, reader& r)
                     std::move(syscall), std::move(params), std::move(body)};
             }
         } else {
-            r = backup;
             if (expect<token::symbol::RBRACE>(r)) {
                 return ast::SyscallFilter{
                     std::move(syscall), std::move(params), std::move(body)};
