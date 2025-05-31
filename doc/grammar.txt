@@ -2,9 +2,9 @@ ProgramStatements <- ProgramStatement* EOF
 ProgramStatement <- Policy
                   / PolicyStatement
                   / "DEFAULT" Action
-Policy <- "POLICY" IDENTIFIER '{' PolicyStatement* '}'
+Policy <- "POLICY" IDENTIFIER (INTEGER / IDENTIFIER) '{' PolicyStatement* '}'
 PolicyStatement <- UseStatement / ActionBlock
-UseStatement <- "USE" IDENTIFIER
+UseStatement <- "USE" IDENTIFIER (INTEGER / IDENTIFIER)
 ActionBlock <- Action '{' (SyscallFilter ',')* SyscallFilter? '}'
 Action <- "ALLOW"
         / "LOG"

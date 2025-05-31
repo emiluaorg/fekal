@@ -315,16 +315,19 @@ struct ActionBlock : NodeBase
 struct UseStatement
 {
     std::string policy;
+    std::string version;
 };
 
 struct Policy : NodeBase
 {
-    Policy(std::string name, std::vector<PolicyStatement> body)
+    Policy(std::string name, std::string version, std::vector<PolicyStatement> body)
         : name{std::move(name)}
+        , version{std::move(version)}
         , body{std::move(body)}
     {}
 
     std::string name;
+    std::string version;
     std::vector<PolicyStatement> body;
 };
 

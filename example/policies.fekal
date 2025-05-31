@@ -11,13 +11,13 @@
 // - Split them into categories inspired by systemD's seccomp filter sets and
 //   OpenBSD's pledge promises.
 
-POLICY Aio {
+POLICY Aio 0 {
     ALLOW {
         io_cancel, io_destroy, io_getevents, io_pgetevents, io_setup, io_submit
     }
 }
 
-POLICY BasicIo {
+POLICY BasicIo 0 {
     ALLOW {
         read, readv, tee, vmsplice, write, writev,
 
@@ -31,7 +31,7 @@ POLICY BasicIo {
     }
 }
 
-POLICY Clock {
+POLICY Clock 0 {
     ALLOW {
         clock_getres, clock_gettime, gettimeofday, time, times
     }
@@ -39,7 +39,7 @@ POLICY Clock {
 
 // Compat quirks. This family of policies is a good candidate to be maintained
 // in a different repo.
-POLICY CompatX86 {
+POLICY CompatX86 0 {
     ALLOW {
         // important for old ABI emulation
         personality(persona) {
@@ -57,32 +57,32 @@ POLICY CompatX86 {
     }
 }
 
-POLICY CompatDB32 {
+POLICY CompatDB32 0 {
     ALLOW {
         remap_file_pages
     }
 }
 
-POLICY CompatSystemd {
+POLICY CompatSystemd 0 {
     ALLOW {
         // SystemD uses this to get mount-id
         name_to_handle_at
     }
 }
 
-POLICY CompatWine {
+POLICY CompatWine 0 {
     ALLOW {
         modify_ldt
     }
 }
 
-POLICY Credentials {
+POLICY Credentials 0 {
     ALLOW {
         getegid, geteuid, getgid, getgroups, getresgid, getresuid, getuid
     }
 }
 
-POLICY CredentialsExtra {
+POLICY CredentialsExtra 0 {
     ALLOW {
         // SystemD lists this syscall in the policy 'process' with the reasoning
         // that it's able to query arbitrary processes so it's a process
@@ -96,7 +96,7 @@ POLICY CredentialsExtra {
     }
 }
 
-POLICY CredentialsMutation {
+POLICY CredentialsMutation 0 {
     ALLOW {
         capset, setfsgid, setfsuid, setgid, setgroups, setregid, setresgid,
         setresuid, setreuid, setuid
@@ -112,7 +112,7 @@ POLICY CredentialsMutation {
 // required libraries and do many operations to stich the program image
 // together. The idea here is to apply a filter that will allow the C runtime to
 // keep running after we already have the program image in RAM.
-POLICY CRuntime {
+POLICY CRuntime 0 {
     ALLOW {
         brk, exit, exit_group, futex, futex_requeue, futex_wait, futex_waitv,
         futex_wake, get_robust_list, get_thread_area, gettid, madvise,
@@ -133,14 +133,14 @@ POLICY CRuntime {
 // - For IPC usage, better mechanisms exist (e.g. one can memfd+seal+mmap to
 //   have zero copy I/O between cooperating processes).
 // - They appeared in a few CVEs in the past.
-POLICY Debug {
+POLICY Debug 0 {
     ALLOW {
         kcmp, pidfd_getfd, perf_event_open, process_madvise, process_mrelease,
         process_vm_readv, process_vm_writev, ptrace
     }
 }
 
-POLICY FileDescriptors {
+POLICY FileDescriptors 0 {
     ALLOW {
         close, close_range, dup, dup2, dup3, fcntl
     }
@@ -152,7 +152,7 @@ POLICY FileDescriptors {
 // - Already open files.
 // - Files received from UNIX sockets.
 // - Memfds.
-POLICY FileIo {
+POLICY FileIo 0 {
     ALLOW {
         copy_file_range, fadvise64, fallocate, flock, ftruncate, lseek, pread64,
         preadv, preadv2, pwrite64, pwritev, pwritev2, readahead, sendfile,
@@ -163,7 +163,7 @@ POLICY FileIo {
 // OpenBSD's pledge further breaks down this promise into rpath, wpath, cpath
 // and dpath, but Landlock would be more appropriate to mirror the intention of
 // such granular designs
-POLICY Filesystem {
+POLICY Filesystem 0 {
     ALLOW {
         access, chdir, creat, faccessat, faccessat2, fchdir, fgetxattr,
         flistxattr, fstat, fstatfs, getcwd, getdents, getdents64, getxattr,
@@ -176,7 +176,7 @@ POLICY Filesystem {
 }
 
 // Allowed to make explicit changes to fields in struct stat relating to a file.
-POLICY FilesystemAttr {
+POLICY FilesystemAttr 0 {
     ALLOW {
         chmod, chown, fchmod, fchmodat, fchmodat2, fchown, fchownat,
         fremovexattr, fsetxattr, futimesat, lchown, lremovexattr, lsetxattr,
@@ -185,7 +185,7 @@ POLICY FilesystemAttr {
 }
 
 // Event loop system calls.
-POLICY IoEvent {
+POLICY IoEvent 0 {
     ALLOW {
         epoll_create, epoll_create1, epoll_ctl, epoll_ctl_old, epoll_pwait,
         epoll_pwait2, epoll_wait, epoll_wait_old, eventfd, eventfd2, poll,
@@ -195,14 +195,14 @@ POLICY IoEvent {
 
 // io_uring nowadays is considered unsafe for general usage:
 // http://security.googleblog.com/2023/06/learnings-from-kctf-vrps-42-linux.html
-POLICY IoUring {
+POLICY IoUring 0 {
     ALLOW {
         io_uring_enter, io_uring_register, io_uring_setup
     }
 }
 
 // SysV IPC, POSIX Message Queues or other IPC.
-POLICY Ipc {
+POLICY Ipc 0 {
     ALLOW {
         memfd_create, mq_getsetattr, mq_notify, mq_open, mq_timedreceive,
         mq_timedsend, mq_unlink, msgctl, msgget, msgrcv, msgsnd, pipe, pipe2,
@@ -211,26 +211,26 @@ POLICY Ipc {
 }
 
 // Memory locking control.
-POLICY Memlock {
+POLICY Memlock 0 {
     ALLOW {
         memfd_secret, mlock, mlock2, mlockall, munlock, munlockall
     }
 }
 
-POLICY NetworkIo {
+POLICY NetworkIo 0 {
     ALLOW {
         connect, getpeername, getsockname, getsockopt, recvfrom, recvmmsg,
         recvmsg, sendmmsg, sendmsg, sendto, setsockopt, shutdown
     }
 }
 
-POLICY NetworkServer {
+POLICY NetworkServer 0 {
     ALLOW {
         accept, accept4, bind, listen
     }
 }
 
-POLICY NetworkSocketTcp {
+POLICY NetworkSocketTcp 0 {
     ALLOW {
         socket(domain, type, protocol) {
             (domain == /*AF_INET=*/2 || domain == /*AF_INET6=*/10) &&
@@ -240,7 +240,7 @@ POLICY NetworkSocketTcp {
     }
 }
 
-POLICY NetworkSocketUdp {
+POLICY NetworkSocketUdp 0 {
     ALLOW {
         socket(domain, type, protocol) {
             (domain == /*AF_INET=*/2 || domain == /*AF_INET6=*/10) &&
@@ -250,7 +250,7 @@ POLICY NetworkSocketUdp {
     }
 }
 
-POLICY NetworkSocketUnix {
+POLICY NetworkSocketUnix 0 {
     ALLOW {
         socket(domain, type, protocol) {
             domain == /*AF_UNIX=*/1 && protocol == 0
@@ -262,7 +262,7 @@ POLICY NetworkSocketUnix {
 }
 
 // System calls used for memory protection keys.
-POLICY Pkey {
+POLICY Pkey 0 {
     ALLOW {
         pkey_alloc, pkey_free, pkey_mprotect
     }
@@ -279,7 +279,7 @@ POLICY Pkey {
 // already know just how important it is to support this kind of mechanism for
 // properly dropping privileges, and it'd be good for more kernel hackers to
 // learn this lesson as well.
-POLICY Process {
+POLICY Process 0 {
     ALLOW {
         // Where's clone2? ia64 is the only architecture that has clone2, but
         // ia64 doesn't implement seccomp. c.f.
@@ -291,7 +291,7 @@ POLICY Process {
     }
 }
 
-POLICY Resources {
+POLICY Resources 0 {
     ALLOW {
         getcpu, getpriority, getrlimit, ioprio_get, sched_getaffinity,
         sched_getattr, sched_getparam, sched_get_priority_max,
@@ -300,14 +300,14 @@ POLICY Resources {
 }
 
 // Alter resource settings.
-POLICY ResourcesMutation {
+POLICY ResourcesMutation 0 {
     ALLOW {
         ioprio_set, prlimit64, sched_setaffinity, sched_setattr, sched_setparam,
         sched_setscheduler, setpriority, setrlimit
     }
 }
 
-POLICY Sandbox {
+POLICY Sandbox 0 {
     ALLOW {
         landlock_add_rule, landlock_create_ruleset, landlock_restrict_self,
         seccomp
@@ -315,7 +315,7 @@ POLICY Sandbox {
 }
 
 // Process signal handling.
-POLICY Signal {
+POLICY Signal 0 {
     ALLOW {
         pause, rt_sigaction, rt_sigpending, rt_sigprocmask, rt_sigreturn,
         rt_sigsuspend, rt_sigtimedwait, sigaltstack, signalfd, signalfd4
@@ -323,14 +323,14 @@ POLICY Signal {
 }
 
 // Synchronize files and memory to storage.
-POLICY Sync {
+POLICY Sync 0 {
     ALLOW {
         fdatasync, fsync, msync, sync, sync_file_range, syncfs
     }
 }
 
 // Schedule operations by time.
-POLICY Timer {
+POLICY Timer 0 {
     ALLOW {
         alarm, getitimer, clock_nanosleep, nanosleep, setitimer, timer_create,
         timer_delete, timer_getoverrun, timer_gettime, timer_settime,

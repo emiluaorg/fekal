@@ -139,6 +139,17 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
     std::string name = r.value<token::symbol::IDENTIFIER>();
     r.next();
 
+    std::string version;
+    if (auto res = INTEGER(r) ; res) {
+        version = std::to_string(*res);
+    } else if (r.symbol() == token::symbol::IDENTIFIER) {
+        version = r.value<token::symbol::IDENTIFIER>();
+        r.next();
+    } else {
+        r = backup;
+        return std::nullopt;
+    }
+
     if (!expect<token::symbol::LBRACE>(r)) {
         r = backup;
         return std::nullopt;
@@ -155,7 +166,7 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
             continue;
         } else {
             if (expect<token::symbol::RBRACE>(r)) {
-                return ast::Policy{std::move(name), std::move(stmts)};
+                return ast::Policy{std::move(name), std::move(version), std::move(stmts)};
             } else {
                 r = backup;
                 return std::nullopt;
@@ -190,9 +201,20 @@ UseStatement(const recursion_context& recur, reader& r)
         return std::nullopt;
     }
 
-    ast::UseStatement ret{r.value<token::symbol::IDENTIFIER>()};
+    std::string policy = r.value<token::symbol::IDENTIFIER>();
     r.next();
-    return ret;
+    std::string version;
+    if (auto res = INTEGER(r); res) {
+        version = std::to_string(*res);
+    } else if (r.symbol() == token::symbol::IDENTIFIER) {
+        version = r.value<token::symbol::IDENTIFIER>();
+        r.next();
+    } else {
+        r = backup;
+        return std::nullopt;
+    }
+
+    return ast::UseStatement {policy, version};
 }
 
 static

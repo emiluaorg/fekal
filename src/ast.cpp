@@ -255,13 +255,13 @@ std::string format(const std::vector<ast::ProgramStatement>& program)
             " {},\n",
             std::visit<std::string>(hana::overload(
                 [](const ast::Policy& p) {
-                    std::string ret = "Policy " + p.name + "{\n";
+                    std::string ret = "Policy " + p.name + " " + p.version + " {\n";
                     for (const auto& stmt : p.body) {
                         ret.append("  ");
                         ret.append(std::visit<std::string>(hana::overload(
                             [&](const ast::UseStatement& stmt) {
                                 return std::format(
-                                    "UseStatement{{{}}}", stmt.policy);
+                                    "UseStatement{{{} {}}}", stmt.policy, stmt.version);
                             },
                             [&](const ast::ActionBlock& block) {
                                 return format(block, /*indent=*/2) + ',';
@@ -273,7 +273,7 @@ std::string format(const std::vector<ast::ProgramStatement>& program)
                 [](const ast::DefaultAction& a) {
                     return std::format("DEFAULT={}", format(a)); },
                 [](const ast::UseStatement& stmt) {
-                    return std::format("UseStatement{{{}}}", stmt.policy); },
+                    return std::format("UseStatement{{{} {}}}", stmt.policy, stmt.version); },
                 [](const ast::ActionBlock& block) {
                     return format(block, /*indent=*/1) + ','; }
             ), stmt)));
