@@ -3,24 +3,15 @@
 
 #pragma once
 
-#include <boost/hana/functional/overload.hpp>
-#include <variant>
-
 namespace fekal::peg {
 
 template<class Recur, class Reader, class F>
 static inline
 auto choice(const Recur& recur, Reader& r, F&& f)
 {
-    static constexpr auto test = boost::hana::overload(
-        []<class... Ts>(const std::variant<std::monostate, Ts...>& v) {
-            return v.index() != 0;
-        },
-        [](const auto& v) { return static_cast<bool>(v); });
-
     auto backup = r;
     auto res = f(recur, r);
-    if (!test(res)) {
+    if (!recur.test(res)) {
         r = backup;
     }
     return res;

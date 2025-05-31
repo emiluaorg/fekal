@@ -5,6 +5,7 @@
 
 #include <type_traits>
 #include <cassert>
+#include <variant>
 #include <bitset>
 #include <array>
 
@@ -62,6 +63,18 @@ struct basic_recursion_context
     {}
 #endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
 
+    template<class... Ts>
+    static bool test(const std::variant<std::monostate, Ts...>& v)
+    {
+        return v.index() != 0;
+    }
+
+    template<class T>
+    static bool test(const T& v)
+    {
+        return static_cast<bool>(v);
+    }
+
     template<auto Fn>
     return_type<Fn> enter_impl(Reader& reader, boost::mp11::mp_true) const
     {
@@ -83,7 +96,7 @@ struct basic_recursion_context
             if (inner.is_limited<Fn>()) {
                 auto& lim = inner.limit<Fn>();
                 if (lim == 0) {
-                    return nullptr;
+                    return {};
                 }
 
                 --lim;
@@ -118,14 +131,14 @@ struct basic_recursion_context
 #if !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         c.emplace_back(last_res, reader);
 #endif // !defined(FEKAL_DISABLE_PEG_MEMOIZATION)
-        if (!last_res) {
+        if (!test(last_res)) {
             return last_res;
         }
 
         for (limit = 1 ;; ++limit) {
             auto r2 = backup;
             auto res = Fn(inner, r2);
-            assert(res);
+            assert(test(res));
             if (reader < r2) {
                 // we found more tokens in the new deeper iteration
                 using std::swap;
