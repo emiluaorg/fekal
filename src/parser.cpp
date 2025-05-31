@@ -14,7 +14,7 @@ using peg::choice;
 
 struct recursion_context_rules;
 using recursion_context =
-    peg::basic_recursion_context<ast::Expr, reader, recursion_context_rules>;
+    peg::basic_recursion_context<reader, recursion_context_rules>;
 using ExprPtr = std::shared_ptr<ast::Expr>;
 
 static
@@ -57,7 +57,7 @@ static ExprPtr Term(const recursion_context& recur, reader& r);
 
 struct recursion_context_rules
     : peg::basic_recursion_context_rules<
-        ast::Expr, reader, recursion_context_rules,
+        reader, recursion_context_rules,
         OrExpr, AndExpr, RelOpExpr, BitOrExpr, BitXorExpr, BitAndExpr,
         BitShiftExpr, SumExpr, MulExpr, Term>
 {};
