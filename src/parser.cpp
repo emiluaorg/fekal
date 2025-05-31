@@ -5,6 +5,8 @@
 #include <fekal/reader.hpp>
 #include <fekal/peg.hpp>
 
+#include <optional>
+
 namespace fekal {
 
 namespace hana = boost::hana;
