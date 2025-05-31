@@ -63,7 +63,13 @@ struct basic_recursion_context
 #endif // defined(FEKAL_DISABLE_PEG_MEMOIZATION)
 
     template<auto Fn>
-    return_type<Fn> enter(Reader& reader) const
+    return_type<Fn> enter_impl(Reader& reader, boost::mp11::mp_true) const
+    {
+        return Fn(*this, reader);
+    }
+
+    template<auto Fn>
+    return_type<Fn> enter_impl(Reader& reader, boost::mp11::mp_false) const
     {
 #if defined(FEKAL_DISABLE_PEG_MEMOIZATION)
         basic_recursion_context inner{reader};
@@ -134,6 +140,13 @@ struct basic_recursion_context
         }
 
         return last_res;
+    }
+
+    template<auto Fn>
+    return_type<Fn> enter(Reader& reader) const
+    {
+        using Tag = boost::mp11::mp_bool<index<Fn>() == Rules::mp_fn_list_size>;
+        return enter_impl<Fn>(reader, Tag{});
     }
 
     // useful to define left-to-right associativity

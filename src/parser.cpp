@@ -103,11 +103,11 @@ mp11::mp_push_front<ast::ProgramStatement, std::monostate>
 ProgramStatement(const recursion_context& recur, reader& r)
 {
     using Ret = mp11::mp_push_front<ast::ProgramStatement, std::monostate>;
-    if (auto res = Policy(recur, r) ; res) {
+    if (auto res = recur.enter<Policy>(r) ; res) {
         return *res;
-    } else if (auto res = UseStatement(recur, r) ; res) {
+    } else if (auto res = recur.enter<UseStatement>(r) ; res) {
         return *res;
-    } else if (auto res = ActionBlock(recur, r) ; res) {
+    } else if (auto res = recur.enter<ActionBlock>(r) ; res) {
         return *res;
     } else if (auto backup = r ; expect<token::symbol::KW_DEFAULT>(r)) {
         return std::visit(hana::overload(
@@ -116,7 +116,7 @@ ProgramStatement(const recursion_context& recur, reader& r)
                 return {};
             },
             [](const auto& v) -> Ret { return ast::DefaultAction{v}; }
-        ), Action(recur, r));
+        ), recur.enter<Action>(r));
     } else {
         return {};
     }
@@ -148,7 +148,7 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
             [](std::monostate&&) { return false; },
             [&](auto&& stmt) {
                 stmts.emplace_back(std::move(stmt)); return true; }
-        ), PolicyStatement(recur, r));
+        ), recur.enter<PolicyStatement>(r));
         if (found) {
             continue;
         } else {
@@ -166,9 +166,9 @@ static
 mp11::mp_push_front<ast::PolicyStatement, std::monostate>
 PolicyStatement(const recursion_context& recur, reader& r)
 {
-    if (auto res = UseStatement(recur, r) ; res) {
+    if (auto res = recur.enter<UseStatement>(r) ; res) {
         return *res;
-    } else if (auto res = ActionBlock(recur, r) ; res) {
+    } else if (auto res = recur.enter<ActionBlock>(r) ; res) {
         return *res;
     } else {
         return {};
@@ -202,7 +202,7 @@ ActionBlock(const recursion_context& recur, reader& r)
     std::visit(hana::overload(
         [](std::monostate&&) {},
         [&](auto&& a) { action.emplace(std::move(a)); }
-    ), Action(recur, r));
+    ), recur.enter<Action>(r));
     if (!action) {
         return std::nullopt;
     }
@@ -214,7 +214,7 @@ ActionBlock(const recursion_context& recur, reader& r)
 
     std::vector<ast::SyscallFilter> filters;
     for (;;) {
-        auto filter = SyscallFilter(recur, r);
+        auto filter = recur.enter<SyscallFilter>(r);
         if (filter) {
             filters.emplace_back(std::move(*filter));
             switch (r.symbol()) {
@@ -793,7 +793,7 @@ std::vector<ast::ProgramStatement> parse(std::string_view input)
             [](std::monostate&&) {
                 throw std::runtime_error{"no match"}; },
             [&](auto&& stmt) { ret.emplace_back(std::move(stmt)); }
-        ), ProgramStatement(recur, r));
+        ), recur.enter<ProgramStatement>(r));
     }
 
     return ret;
