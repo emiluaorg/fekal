@@ -15,7 +15,6 @@ namespace fekal {
 
 namespace ast {
 
-struct Expr;
 struct IntLit;
 struct Identifier;
 struct SumExpr;
@@ -57,21 +56,21 @@ using ProgramStatement = boost::mp11::mp_append<
     std::variant<Policy, DefaultAction>,
     PolicyStatement>;
 
-using IntExprs = std::variant<
+using IntExpr = std::variant<
     IntLit, Identifier, SumExpr, SubtractExpr, MulExpr, DivExpr, LshiftExpr,
     RshiftExpr, BitAndExpr, BitXorExpr, BitOrExpr>;
 
-using BoolExprs = std::variant<
+using BoolExpr = std::variant<
     EqExpr, NeqExpr, LtExpr, GtExpr, LteExpr, GteExpr, NegExpr, AndExpr,
     OrExpr>;
 
-using Exprs = boost::mp11::mp_append<IntExprs, BoolExprs>;
+using Expr = boost::mp11::mp_append<IntExpr, BoolExpr>;
 
 template<class T>
-constexpr bool IsIntExpr = boost::mp11::mp_contains<IntExprs, T>::value;
+constexpr bool IsIntExpr = boost::mp11::mp_contains<IntExpr, T>::value;
 
 template<class T>
-constexpr bool IsBoolExpr = boost::mp11::mp_contains<BoolExprs, T>::value;
+constexpr bool IsBoolExpr = boost::mp11::mp_contains<BoolExpr, T>::value;
 
 struct NodeBase
 {
@@ -95,161 +94,181 @@ struct Identifier : NodeBase
 
 struct SumExpr : NodeBase
 {
-    SumExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    SumExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct SubtractExpr : NodeBase
 {
-    SubtractExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    SubtractExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct MulExpr : NodeBase
 {
-    MulExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    MulExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct DivExpr : NodeBase
 {
-    DivExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    DivExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct LshiftExpr : NodeBase
 {
-    LshiftExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    LshiftExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct RshiftExpr : NodeBase
 {
-    RshiftExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    RshiftExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct BitAndExpr : NodeBase
 {
-    BitAndExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    BitAndExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct BitXorExpr : NodeBase
 {
-    BitXorExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    BitXorExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct BitOrExpr : NodeBase
 {
-    BitOrExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    BitOrExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct EqExpr : NodeBase
 {
-    EqExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    EqExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct NeqExpr : NodeBase
 {
-    NeqExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    NeqExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct LtExpr : NodeBase
 {
-    LtExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    LtExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct GtExpr : NodeBase
 {
-    GtExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    GtExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct LteExpr : NodeBase
 {
-    LteExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    LteExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct GteExpr : NodeBase
 {
-    GteExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    GteExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, IntExprs> left, right;
+    std::shared_ptr<IntExpr> left, right;
 };
 
 struct NegExpr : NodeBase
 {
-    NegExpr(const std::shared_ptr<Expr>& inner);
+    NegExpr(std::shared_ptr<BoolExpr> inner)
+        : inner{std::move(inner)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, BoolExprs> inner;
+    std::shared_ptr<BoolExpr> inner;
 };
 
 struct AndExpr : NodeBase
 {
-    AndExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    AndExpr(std::shared_ptr<BoolExpr> left, std::shared_ptr<BoolExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, BoolExprs> left, right;
+    std::shared_ptr<BoolExpr> left, right;
 };
 
 struct OrExpr : NodeBase
 {
-    OrExpr(
-        const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right);
+    OrExpr(std::shared_ptr<BoolExpr> left, std::shared_ptr<BoolExpr> right)
+        : left{std::move(left)}
+        , right{std::move(right)}
+    {}
 
-    boost::mp11::mp_transform<std::shared_ptr, BoolExprs> left, right;
-};
-
-struct Expr : Exprs
-{
-    using Exprs::Exprs;
-
-    NodeBase& base()
-    {
-        return std::visit([](NodeBase& e) -> NodeBase& { return e; }, *this);
-    }
-
-    const NodeBase& base() const
-    {
-        return std::visit([](const NodeBase& e) -> const NodeBase& {
-            return e; }, *this);
-    }
+    std::shared_ptr<BoolExpr> left, right;
 };
 
 struct ActionErrno
@@ -269,13 +288,11 @@ struct ActionTrace
 
 struct SyscallFilter : NodeBase
 {
-    using expr_type = boost::mp11::mp_transform<std::shared_ptr, BoolExprs>;
-
     SyscallFilter(std::string syscall) : syscall{std::move(syscall)} {}
 
     SyscallFilter(
         std::string syscall, std::vector<std::string> params,
-        std::vector<expr_type> body)
+        std::vector<std::shared_ptr<BoolExpr>> body)
         : syscall{std::move(syscall)}
         , params{std::move(params)}
         , body{std::move(body)}
@@ -283,7 +300,7 @@ struct SyscallFilter : NodeBase
 
     std::string syscall;
     std::vector<std::string> params;
-    std::vector<expr_type> body;
+    std::vector<std::shared_ptr<BoolExpr>> body;
 };
 
 struct ActionBlock : NodeBase
@@ -304,13 +321,13 @@ struct UseStatement
 
 struct Policy : NodeBase
 {
-    Policy(std::string name, std::vector<ast::PolicyStatement> body)
+    Policy(std::string name, std::vector<PolicyStatement> body)
         : name{std::move(name)}
         , body{std::move(body)}
     {}
 
     std::string name;
-    std::vector<ast::PolicyStatement> body;
+    std::vector<PolicyStatement> body;
 };
 
 struct DefaultAction : NodeBase, Action
@@ -319,157 +336,34 @@ struct DefaultAction : NodeBase, Action
 };
 
 template<class E, class... Args>
-inline std::shared_ptr<ast::Expr> make_expr(
+inline std::shared_ptr<IntExpr> make_int_expr(
     unsigned line, unsigned column, Args&&... args)
 {
-    auto ret = std::make_shared<ast::Expr>(
+    auto ret = std::make_shared<IntExpr>(
         std::in_place_type<E>, std::forward<Args>(args)...);
-    ret->base().line = line;
-    ret->base().column = column;
+    NodeBase& base =
+        std::visit([](NodeBase& e) -> NodeBase& { return e; }, *ret);
+    base.line = line;
+    base.column = column;
     return ret;
 }
 
-inline
-boost::mp11::mp_transform<std::shared_ptr, BoolExprs>
-unwrap_bool_expr(const std::shared_ptr<Expr>& e)
+template<class E, class... Args>
+inline std::shared_ptr<BoolExpr> make_bool_expr(
+    unsigned line, unsigned column, Args&&... args)
 {
-    using Ret = boost::mp11::mp_transform<std::shared_ptr, BoolExprs>;
-
-    return std::visit(boost::hana::overload(
-        [&]<class T>(T& inner) -> std::enable_if_t<IsBoolExpr<T>, Ret> {
-            return std::shared_ptr<T>{e, &inner};
-        },
-        []<class T>(T&) -> std::enable_if_t<!IsBoolExpr<T>, Ret> {
-            std::abort();
-        }
-    ), *e);
+    auto ret = std::make_shared<BoolExpr>(
+        std::in_place_type<E>, std::forward<Args>(args)...);
+    NodeBase& base =
+        std::visit([](NodeBase& e) -> NodeBase& { return e; }, *ret);
+    base.line = line;
+    base.column = column;
+    return ret;
 }
-
-inline
-boost::mp11::mp_transform<std::shared_ptr, IntExprs>
-unwrap_int_expr(const std::shared_ptr<Expr>& e)
-{
-    using Ret = boost::mp11::mp_transform<std::shared_ptr, IntExprs>;
-
-    return std::visit(boost::hana::overload(
-        [&]<class T>(T& inner) -> std::enable_if_t<IsIntExpr<T>, Ret> {
-            return std::shared_ptr<T>{e, &inner};
-        },
-        []<class T>(T&) -> std::enable_if_t<!IsIntExpr<T>, Ret> {
-            std::abort();
-        }
-    ), *e);
-}
-
-inline SumExpr::SumExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline SubtractExpr::SubtractExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline MulExpr::MulExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline DivExpr::DivExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline LshiftExpr::LshiftExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline RshiftExpr::RshiftExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline BitAndExpr::BitAndExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline BitXorExpr::BitXorExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline BitOrExpr::BitOrExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline EqExpr::EqExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline NeqExpr::NeqExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline LtExpr::LtExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline GtExpr::GtExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline LteExpr::LteExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline GteExpr::GteExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_int_expr(left)}
-    , right{unwrap_int_expr(right)}
-{}
-
-inline NegExpr::NegExpr(const std::shared_ptr<Expr>& inner)
-    : inner{unwrap_bool_expr(inner)}
-{}
-
-inline AndExpr::AndExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_bool_expr(left)}
-    , right{unwrap_bool_expr(right)}
-{}
-
-inline OrExpr::OrExpr(
-    const std::shared_ptr<Expr>& left, const std::shared_ptr<Expr>& right)
-    : left{unwrap_bool_expr(left)}
-    , right{unwrap_bool_expr(right)}
-{}
 
 } // namespace ast
 
-bool eval(const std::shared_ptr<ast::Expr>& e);
+bool eval(const ast::BoolExpr& e);
 std::string format(const std::vector<ast::ProgramStatement>& program);
 
 } // namespace fekal

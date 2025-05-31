@@ -8,64 +8,55 @@
 namespace fekal {
 
 namespace hana = boost::hana;
-namespace mp11 = boost::mp11;
 
-static
-std::int64_t eval_int(
-    const mp11::mp_transform<std::shared_ptr, ast::IntExprs> &e)
+static std::int64_t eval_int(const ast::IntExpr& e)
 {
     return std::visit(hana::overload(
-        [](const std::shared_ptr<ast::IntLit>& e) { return e->value; },
-        [](const std::shared_ptr<ast::Identifier>&) -> std::int64_t {
-            return 0; },
-        [](const std::shared_ptr<ast::SumExpr>& e) {
-            return eval_int(e->left) + eval_int(e->right); },
-        [](const std::shared_ptr<ast::SubtractExpr>& e) {
-            return eval_int(e->left) - eval_int(e->right); },
-        [](const std::shared_ptr<ast::MulExpr>& e) {
-            return eval_int(e->left) * eval_int(e->right); },
-        [](const std::shared_ptr<ast::DivExpr>& e) {
-            return eval_int(e->left) / eval_int(e->right); },
-        [](const std::shared_ptr<ast::LshiftExpr>& e) {
-            return eval_int(e->left) << eval_int(e->right); },
-        [](const std::shared_ptr<ast::RshiftExpr>& e) {
-            return eval_int(e->left) >> eval_int(e->right); },
-        [](const std::shared_ptr<ast::BitAndExpr>& e) {
-            return eval_int(e->left) & eval_int(e->right); },
-        [](const std::shared_ptr<ast::BitXorExpr>& e) {
-            return eval_int(e->left) ^ eval_int(e->right); },
-        [](const std::shared_ptr<ast::BitOrExpr>& e) {
-            return eval_int(e->left) | eval_int(e->right); }
+        [](const ast::IntLit& e) { return e.value; },
+        [](const ast::Identifier&) -> std::int64_t { return 0; },
+        [](const ast::SumExpr& e) {
+            return eval_int(*e.left) + eval_int(*e.right); },
+        [](const ast::SubtractExpr& e) {
+            return eval_int(*e.left) - eval_int(*e.right); },
+        [](const ast::MulExpr& e) {
+            return eval_int(*e.left) * eval_int(*e.right); },
+        [](const ast::DivExpr& e) {
+            return eval_int(*e.left) / eval_int(*e.right); },
+        [](const ast::LshiftExpr& e) {
+            return eval_int(*e.left) << eval_int(*e.right); },
+        [](const ast::RshiftExpr& e) {
+            return eval_int(*e.left) >> eval_int(*e.right); },
+        [](const ast::BitAndExpr& e) {
+            return eval_int(*e.left) & eval_int(*e.right); },
+        [](const ast::BitXorExpr& e) {
+            return eval_int(*e.left) ^ eval_int(*e.right); },
+        [](const ast::BitOrExpr& e) {
+            return eval_int(*e.left) | eval_int(*e.right); }
     ), e);
 }
 
-static bool eval(const mp11::mp_transform<std::shared_ptr, ast::BoolExprs> &e)
+bool eval(const ast::BoolExpr& e)
 {
     return std::visit(hana::overload(
-        [](const std::shared_ptr<ast::EqExpr>& e) {
-            return eval_int(e->left) == eval_int(e->right); },
-        [](const std::shared_ptr<ast::NeqExpr>& e) {
-            return eval_int(e->left) != eval_int(e->right); },
-        [](const std::shared_ptr<ast::LtExpr>& e) {
-            return eval_int(e->left) < eval_int(e->right); },
-        [](const std::shared_ptr<ast::GtExpr>& e) {
-            return eval_int(e->left) > eval_int(e->right); },
-        [](const std::shared_ptr<ast::LteExpr>& e) {
-            return eval_int(e->left) <= eval_int(e->right); },
-        [](const std::shared_ptr<ast::GteExpr>& e) {
-            return eval_int(e->left) >= eval_int(e->right); },
-        [](const std::shared_ptr<ast::NegExpr>& e) {
-            return !eval(e->inner); },
-        [](const std::shared_ptr<ast::AndExpr>& e) {
-            return (eval(e->left) && eval(e->right)); },
-        [](const std::shared_ptr<ast::OrExpr>& e) {
-            return (eval(e->left) || eval(e->right)); }
+        [](const ast::EqExpr& e) {
+            return eval_int(*e.left) == eval_int(*e.right); },
+        [](const ast::NeqExpr& e) {
+            return eval_int(*e.left) != eval_int(*e.right); },
+        [](const ast::LtExpr& e) {
+            return eval_int(*e.left) < eval_int(*e.right); },
+        [](const ast::GtExpr& e) {
+            return eval_int(*e.left) > eval_int(*e.right); },
+        [](const ast::LteExpr& e) {
+            return eval_int(*e.left) <= eval_int(*e.right); },
+        [](const ast::GteExpr& e) {
+            return eval_int(*e.left) >= eval_int(*e.right); },
+        [](const ast::NegExpr& e) {
+            return !eval(*e.inner); },
+        [](const ast::AndExpr& e) {
+            return (eval(*e.left) && eval(*e.right)); },
+        [](const ast::OrExpr& e) {
+            return (eval(*e.left) || eval(*e.right)); }
     ), e);
-}
-
-bool eval(const std::shared_ptr<ast::Expr>& e)
-{
-    return eval(unwrap_bool_expr(e));
 }
 
 static std::string format(const ast::Action& action)
@@ -85,139 +76,136 @@ static std::string format(const ast::Action& action)
     ), action);
 }
 
-static std::string format(
-    const mp11::mp_transform<std::shared_ptr, ast::IntExprs>& expr,
-    unsigned indent)
+static std::string format(const ast::IntExpr& expr, unsigned indent)
 {
     return std::visit<std::string>(hana::overload(
-        [&](const std::shared_ptr<ast::IntLit>& e) {
-            return std::to_string(e->value); },
-        [&](const std::shared_ptr<ast::Identifier>& e) { return e->value; },
-        [&](const std::shared_ptr<ast::SumExpr>& e) {
+        [&](const ast::IntLit& e) { return std::to_string(e.value); },
+        [&](const ast::Identifier& e) { return e.value; },
+        [&](const ast::SumExpr& e) {
             return "(+\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::SubtractExpr>& e) {
+        [&](const ast::SubtractExpr& e) {
             return "(-\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::MulExpr>& e) {
+        [&](const ast::MulExpr& e) {
             return "(*\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::DivExpr>& e) {
+        [&](const ast::DivExpr& e) {
             return "(/\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::LshiftExpr>& e) {
+        [&](const ast::LshiftExpr& e) {
             return "(<<\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::RshiftExpr>& e) {
+        [&](const ast::RshiftExpr& e) {
             return "(>>\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::BitAndExpr>& e) {
+        [&](const ast::BitAndExpr& e) {
             return "(&\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::BitXorExpr>& e) {
+        [&](const ast::BitXorExpr& e) {
             return "(^\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::BitOrExpr>& e) {
+        [&](const ast::BitOrExpr& e) {
             return "(|\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         }
     ), expr);
 }
 
-static std::string format(const ast::SyscallFilter::expr_type& expr, unsigned indent)
+static std::string format(const ast::BoolExpr& expr, unsigned indent)
 {
     return std::visit<std::string>(hana::overload(
-        [&](const std::shared_ptr<ast::EqExpr>& e) {
+        [&](const ast::EqExpr& e) {
             return "(==\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::NeqExpr>& e) {
+        [&](const ast::NeqExpr& e) {
             return "(!=\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::LtExpr>& e) {
+        [&](const ast::LtExpr& e) {
             return "(<\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::GtExpr>& e) {
+        [&](const ast::GtExpr& e) {
             return "(>\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::LteExpr>& e) {
+        [&](const ast::LteExpr& e) {
             return "(<=\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::GteExpr>& e) {
+        [&](const ast::GteExpr& e) {
             return "(>=\n" +
                 std::string(indent + 1, ' ') +
-                format(e->left, indent + 1) + '\n' +
+                format(*e.left, indent + 1) + '\n' +
                 std::string(indent + 1, ' ') +
-                format(e->right, indent + 1) + ')';
+                format(*e.right, indent + 1) + ')';
         },
-        [&](const std::shared_ptr<ast::NegExpr>& e) {
-            return '!' + format(e->inner, indent); },
-        [&](const std::shared_ptr<ast::AndExpr>& e) {
+        [&](const ast::NegExpr& e) {
+            return '!' + format(*e.inner, indent); },
+        [&](const ast::AndExpr& e) {
             return "AndExpr{\n" +
-                std::string(indent + 1, ' ') + format(e->left, indent + 1) +
+                std::string(indent + 1, ' ') + format(*e.left, indent + 1) +
                 ",\n" +
-                std::string(indent + 1, ' ') + format(e->right, indent + 1) +
+                std::string(indent + 1, ' ') + format(*e.right, indent + 1) +
                 '\n' + std::string(indent, ' ') + '}';
         },
-        [&](const std::shared_ptr<ast::OrExpr>& e) {
+        [&](const ast::OrExpr& e) {
             return "OrExpr{\n" +
-                std::string(indent + 1, ' ') + format(e->left, indent + 1) +
+                std::string(indent + 1, ' ') + format(*e.left, indent + 1) +
                 ",\n" +
-                std::string(indent + 1, ' ') + format(e->right, indent + 1) +
+                std::string(indent + 1, ' ') + format(*e.right, indent + 1) +
                 '\n' + std::string(indent, ' ') + '}';
         }
     ), expr);

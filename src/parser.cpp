@@ -15,7 +15,8 @@ using peg::choice;
 struct recursion_context_rules;
 using recursion_context =
     peg::basic_recursion_context<reader, recursion_context_rules>;
-using ExprPtr = std::shared_ptr<ast::Expr>;
+using IntExprPtr = std::shared_ptr<ast::IntExpr>;
+using BoolExprPtr = std::shared_ptr<ast::BoolExpr>;
 
 static
 mp11::mp_push_front<ast::ProgramStatement, std::monostate>
@@ -44,16 +45,16 @@ static
 std::optional<ast::SyscallFilter>
 SyscallFilter(const recursion_context& recur, reader& r);
 
-static ExprPtr OrExpr(const recursion_context& recur, reader& r);
-static ExprPtr AndExpr(const recursion_context& recur, reader& r);
-static ExprPtr RelOpExpr(const recursion_context& recur, reader& r);
-static ExprPtr BitOrExpr(const recursion_context& recur, reader& r);
-static ExprPtr BitXorExpr(const recursion_context& recur, reader& r);
-static ExprPtr BitAndExpr(const recursion_context& recur, reader& r);
-static ExprPtr BitShiftExpr(const recursion_context& recur, reader& r);
-static ExprPtr SumExpr(const recursion_context& recur, reader& r);
-static ExprPtr MulExpr(const recursion_context& recur, reader& r);
-static ExprPtr Term(const recursion_context& recur, reader& r);
+static BoolExprPtr OrExpr(const recursion_context& recur, reader& r);
+static BoolExprPtr AndExpr(const recursion_context& recur, reader& r);
+static BoolExprPtr RelOpExpr(const recursion_context& recur, reader& r);
+static IntExprPtr BitOrExpr(const recursion_context& recur, reader& r);
+static IntExprPtr BitXorExpr(const recursion_context& recur, reader& r);
+static IntExprPtr BitAndExpr(const recursion_context& recur, reader& r);
+static IntExprPtr BitShiftExpr(const recursion_context& recur, reader& r);
+static IntExprPtr SumExpr(const recursion_context& recur, reader& r);
+static IntExprPtr MulExpr(const recursion_context& recur, reader& r);
+static IntExprPtr Term(const recursion_context& recur, reader& r);
 
 struct recursion_context_rules
     : peg::basic_recursion_context_rules<
@@ -353,11 +354,11 @@ SyscallFilter(const recursion_context& recur, reader& r)
         return return_matched();
     }
 
-    std::vector<ast::SyscallFilter::expr_type> body;
+    std::vector<BoolExprPtr> body;
     for (;;) {
         auto expr = recur.enter<OrExpr>(r);
         if (expr) {
-            body.emplace_back(ast::unwrap_bool_expr(expr));
+            body.emplace_back(std::move(expr));
             switch (r.symbol()) {
             default:
                 return return_matched();
@@ -380,12 +381,12 @@ SyscallFilter(const recursion_context& recur, reader& r)
     }
 }
 
-static ExprPtr OrExpr(const recursion_context& recur, reader& r)
+static BoolExprPtr OrExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // OrExpr '||' AndExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> BoolExprPtr {
             auto e1 = recur.enter<OrExpr>(r);
             if (!e1) {
                 return nullptr;
@@ -401,7 +402,7 @@ static ExprPtr OrExpr(const recursion_context& recur, reader& r)
             if (!e2) {
                 return nullptr;
             }
-            return ast::make_expr<ast::OrExpr>(
+            return ast::make_bool_expr<ast::OrExpr>(
                 l, c, std::move(e1), std::move(e2));
         },
         // AndExpr
@@ -410,12 +411,12 @@ static ExprPtr OrExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr AndExpr(const recursion_context& recur, reader& r)
+static BoolExprPtr AndExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // AndExpr "&&" RelOpExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> BoolExprPtr {
             auto e1 = recur.enter<AndExpr>(r);
             if (!e1) {
                 return nullptr;
@@ -431,7 +432,7 @@ static ExprPtr AndExpr(const recursion_context& recur, reader& r)
             if (!e2) {
                 return nullptr;
             }
-            return ast::make_expr<ast::AndExpr>(
+            return ast::make_bool_expr<ast::AndExpr>(
                 l, c, std::move(e1), std::move(e2));
         },
         // RelOpExpr
@@ -440,12 +441,12 @@ static ExprPtr AndExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr RelOpExpr(const recursion_context& recur, reader& r)
+static BoolExprPtr RelOpExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // BitOrExpr ("==" / "!=" / "<" / ">" / "<=" / ">=") BitOrExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> BoolExprPtr {
             static constexpr auto OP_EQ = token::symbol::OP_EQ;
             static constexpr auto OP_NE = token::symbol::OP_NE;
             static constexpr auto OP_LT = token::symbol::OP_LT;
@@ -480,29 +481,29 @@ static ExprPtr RelOpExpr(const recursion_context& recur, reader& r)
             }
             switch (op) {
             case OP_EQ:
-                return ast::make_expr<ast::EqExpr>(
+                return ast::make_bool_expr<ast::EqExpr>(
                     l, c, std::move(b1), std::move(b2));
             case OP_NE:
-                return ast::make_expr<ast::NeqExpr>(
+                return ast::make_bool_expr<ast::NeqExpr>(
                     l, c, std::move(b1), std::move(b2));
             case OP_LT:
-                return ast::make_expr<ast::LtExpr>(
+                return ast::make_bool_expr<ast::LtExpr>(
                     l, c, std::move(b1), std::move(b2));
             case OP_GT:
-                return ast::make_expr<ast::GtExpr>(
+                return ast::make_bool_expr<ast::GtExpr>(
                     l, c, std::move(b1), std::move(b2));
             case OP_LTE:
-                return ast::make_expr<ast::LteExpr>(
+                return ast::make_bool_expr<ast::LteExpr>(
                     l, c, std::move(b1), std::move(b2));
             case OP_GTE:
-                return ast::make_expr<ast::GteExpr>(
+                return ast::make_bool_expr<ast::GteExpr>(
                     l, c, std::move(b1), std::move(b2));
             default:
                 assert(false);
             }
         },
         // '!'? '(' OrExpr ')'
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> BoolExprPtr {
             bool is_neg = r.symbol() == token::symbol::OP_NEG;
             auto l = r.line();
             auto c = r.column();
@@ -520,19 +521,19 @@ static ExprPtr RelOpExpr(const recursion_context& recur, reader& r)
             }
 
             if (is_neg) {
-                return ast::make_expr<ast::NegExpr>(l, c, std::move(e));
+                return ast::make_bool_expr<ast::NegExpr>(l, c, std::move(e));
             } else {
                 return e;
             }
         });
 }
 
-static ExprPtr BitOrExpr(const recursion_context& recur, reader& r)
+static IntExprPtr BitOrExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // BitOrExpr '|' BitXorExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             auto bo = recur.enter<BitOrExpr>(r);
             if (!bo) {
                 return nullptr;
@@ -548,7 +549,7 @@ static ExprPtr BitOrExpr(const recursion_context& recur, reader& r)
             if (!bx) {
                 return nullptr;
             }
-            return ast::make_expr<ast::BitOrExpr>(
+            return ast::make_int_expr<ast::BitOrExpr>(
                 l, c, std::move(bo), std::move(bx));
         },
         // BitXorExpr
@@ -557,12 +558,12 @@ static ExprPtr BitOrExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr BitXorExpr(const recursion_context& recur, reader& r)
+static IntExprPtr BitXorExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // BitXorExpr '^' BitAndExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             auto bx = recur.enter<BitXorExpr>(r);
             if (!bx) {
                 return nullptr;
@@ -578,7 +579,7 @@ static ExprPtr BitXorExpr(const recursion_context& recur, reader& r)
             if (!ba) {
                 return nullptr;
             }
-            return ast::make_expr<ast::BitXorExpr>(
+            return ast::make_int_expr<ast::BitXorExpr>(
                 l, c, std::move(bx), std::move(ba));
         },
         // BitAndExpr
@@ -587,12 +588,12 @@ static ExprPtr BitXorExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr BitAndExpr(const recursion_context& recur, reader& r)
+static IntExprPtr BitAndExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // BitAndExpr '&' BitShiftExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             auto ba = recur.enter<BitAndExpr>(r);
             if (!ba) {
                 return nullptr;
@@ -608,7 +609,7 @@ static ExprPtr BitAndExpr(const recursion_context& recur, reader& r)
             if (!bs) {
                 return nullptr;
             }
-            return ast::make_expr<ast::BitAndExpr>(
+            return ast::make_int_expr<ast::BitAndExpr>(
                 l, c, std::move(ba), std::move(bs));
         },
         // BitShiftExpr
@@ -617,12 +618,12 @@ static ExprPtr BitAndExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr BitShiftExpr(const recursion_context& recur, reader& r)
+static IntExprPtr BitShiftExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // BitShiftExpr ("<<" / ">>") SumExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             static constexpr auto OP_LSHIFT = token::symbol::OP_LSHIFT;
             static constexpr auto OP_RSHIFT = token::symbol::OP_RSHIFT;
 
@@ -643,10 +644,10 @@ static ExprPtr BitShiftExpr(const recursion_context& recur, reader& r)
                 return nullptr;
             }
             if (op == OP_LSHIFT) {
-                return ast::make_expr<ast::LshiftExpr>(
+                return ast::make_int_expr<ast::LshiftExpr>(
                     l, c, std::move(b), std::move(s));
             } else { assert(op == OP_RSHIFT);
-                return ast::make_expr<ast::RshiftExpr>(
+                return ast::make_int_expr<ast::RshiftExpr>(
                     l, c, std::move(b), std::move(s));
             }
         },
@@ -656,12 +657,12 @@ static ExprPtr BitShiftExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr SumExpr(const recursion_context& recur, reader& r)
+static IntExprPtr SumExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // SumExpr ('+' / '-') MulExpr
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             static constexpr auto OP_PLUS = token::symbol::OP_PLUS;
             static constexpr auto OP_MINUS = token::symbol::OP_MINUS;
 
@@ -682,10 +683,10 @@ static ExprPtr SumExpr(const recursion_context& recur, reader& r)
                 return nullptr;
             }
             if (op == OP_PLUS) {
-                return ast::make_expr<ast::SumExpr>(
+                return ast::make_int_expr<ast::SumExpr>(
                     l, c, std::move(s), std::move(m));
             } else { assert(op == OP_MINUS);
-                return ast::make_expr<ast::SubtractExpr>(
+                return ast::make_int_expr<ast::SubtractExpr>(
                     l, c, std::move(s), std::move(m));
             }
         },
@@ -695,12 +696,12 @@ static ExprPtr SumExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr MulExpr(const recursion_context& recur, reader& r)
+static IntExprPtr MulExpr(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // MulExpr ('*' / '/') Term
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             static constexpr auto OP_MUL = token::symbol::OP_MUL;
             static constexpr auto OP_DIV = token::symbol::OP_DIV;
 
@@ -721,10 +722,10 @@ static ExprPtr MulExpr(const recursion_context& recur, reader& r)
                 return nullptr;
             }
             if (op == OP_MUL) {
-                return ast::make_expr<ast::MulExpr>(
+                return ast::make_int_expr<ast::MulExpr>(
                     l, c, std::move(m), std::move(t));
             } else { assert(op == OP_DIV);
-                return ast::make_expr<ast::DivExpr>(
+                return ast::make_int_expr<ast::DivExpr>(
                     l, c, std::move(m), std::move(t));
             }
         },
@@ -734,24 +735,24 @@ static ExprPtr MulExpr(const recursion_context& recur, reader& r)
         });
 }
 
-static ExprPtr Term(const recursion_context& recur, reader& r)
+static IntExprPtr Term(const recursion_context& recur, reader& r)
 {
     return choice(
         recur, r,
         // INTEGER
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             auto l = r.line();
             auto c = r.column();
             if (auto res = INTEGER(r) ; res) {
-                return ast::make_expr<ast::IntLit>(l, c, *res);
+                return ast::make_int_expr<ast::IntLit>(l, c, *res);
             } else {
                 return nullptr;
             }
         },
         // IDENTIFIER
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             if (r.symbol() == token::symbol::IDENTIFIER) {
-                auto ret = ast::make_expr<ast::Identifier>(
+                auto ret = ast::make_int_expr<ast::Identifier>(
                     r.line(), r.column(), r.value<token::symbol::IDENTIFIER>());
                 r.next();
                 return ret;
@@ -760,7 +761,7 @@ static ExprPtr Term(const recursion_context& recur, reader& r)
             }
         },
         // '(' BitOrExpr ')'
-        [](const recursion_context& recur, reader& r) -> ExprPtr {
+        [](const recursion_context& recur, reader& r) -> IntExprPtr {
             if (!expect<token::symbol::LPAREN>(r)) {
                 return nullptr;
             }
