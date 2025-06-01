@@ -7,6 +7,8 @@
 
 #include <optional>
 
+#include <boost/hana/functional/overload.hpp>
+
 namespace fekal {
 
 namespace hana = boost::hana;
