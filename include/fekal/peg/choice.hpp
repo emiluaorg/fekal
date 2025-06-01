@@ -22,7 +22,7 @@ static inline
 auto choice(const Recur& recur, Reader& reader, F1&& f1, F2&& f2, F3&&... f3)
 {
     auto backup = reader;
-    if (auto res = f1(recur, reader) ; res) {
+    if (auto res = f1(recur, reader) ; recur.test(res)) {
         return res;
     } else {
         reader = backup;
