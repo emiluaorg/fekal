@@ -78,22 +78,30 @@ struct NodeBase
 
 struct IntLit : NodeBase
 {
-    IntLit(std::int64_t value) : value{value} {}
+    IntLit(unsigned line, unsigned column, std::int64_t value)
+        : NodeBase{line, column}
+        , value{value}
+    {}
 
     std::int64_t value;
 };
 
 struct Identifier : NodeBase
 {
-    Identifier(std::string value) : value{std::move(value)} {}
+    Identifier(unsigned line, unsigned column, std::string value)
+        : NodeBase{line, column}
+        , value{std::move(value)}
+    {}
 
     std::string value;
 };
 
 struct SumExpr : NodeBase
 {
-    SumExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    SumExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+            std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -102,8 +110,10 @@ struct SumExpr : NodeBase
 
 struct SubtractExpr : NodeBase
 {
-    SubtractExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    SubtractExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+                 std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -112,8 +122,10 @@ struct SubtractExpr : NodeBase
 
 struct MulExpr : NodeBase
 {
-    MulExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    MulExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+            std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -122,8 +134,10 @@ struct MulExpr : NodeBase
 
 struct DivExpr : NodeBase
 {
-    DivExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    DivExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+            std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -132,8 +146,10 @@ struct DivExpr : NodeBase
 
 struct LshiftExpr : NodeBase
 {
-    LshiftExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    LshiftExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+               std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -142,8 +158,10 @@ struct LshiftExpr : NodeBase
 
 struct RshiftExpr : NodeBase
 {
-    RshiftExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    RshiftExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+               std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -152,8 +170,10 @@ struct RshiftExpr : NodeBase
 
 struct BitAndExpr : NodeBase
 {
-    BitAndExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    BitAndExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+               std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -162,8 +182,10 @@ struct BitAndExpr : NodeBase
 
 struct BitXorExpr : NodeBase
 {
-    BitXorExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    BitXorExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+               std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -172,8 +194,10 @@ struct BitXorExpr : NodeBase
 
 struct BitOrExpr : NodeBase
 {
-    BitOrExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    BitOrExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+              std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -182,8 +206,10 @@ struct BitOrExpr : NodeBase
 
 struct EqExpr : NodeBase
 {
-    EqExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    EqExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+           std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -192,8 +218,10 @@ struct EqExpr : NodeBase
 
 struct NeqExpr : NodeBase
 {
-    NeqExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    NeqExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+            std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -202,8 +230,10 @@ struct NeqExpr : NodeBase
 
 struct LtExpr : NodeBase
 {
-    LtExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    LtExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+           std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -212,8 +242,10 @@ struct LtExpr : NodeBase
 
 struct GtExpr : NodeBase
 {
-    GtExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    GtExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+           std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -222,8 +254,10 @@ struct GtExpr : NodeBase
 
 struct LteExpr : NodeBase
 {
-    LteExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    LteExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+            std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -232,8 +266,10 @@ struct LteExpr : NodeBase
 
 struct GteExpr : NodeBase
 {
-    GteExpr(std::shared_ptr<IntExpr> left, std::shared_ptr<IntExpr> right)
-        : left{std::move(left)}
+    GteExpr(unsigned line, unsigned column, std::shared_ptr<IntExpr> left,
+            std::shared_ptr<IntExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -242,8 +278,9 @@ struct GteExpr : NodeBase
 
 struct NegExpr : NodeBase
 {
-    NegExpr(std::shared_ptr<BoolExpr> inner)
-        : inner{std::move(inner)}
+    NegExpr(unsigned line, unsigned column, std::shared_ptr<BoolExpr> inner)
+        : NodeBase{line, column}
+        , inner{std::move(inner)}
     {}
 
     std::shared_ptr<BoolExpr> inner;
@@ -251,8 +288,10 @@ struct NegExpr : NodeBase
 
 struct AndExpr : NodeBase
 {
-    AndExpr(std::shared_ptr<BoolExpr> left, std::shared_ptr<BoolExpr> right)
-        : left{std::move(left)}
+    AndExpr(unsigned line, unsigned column, std::shared_ptr<BoolExpr> left,
+            std::shared_ptr<BoolExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -261,8 +300,10 @@ struct AndExpr : NodeBase
 
 struct OrExpr : NodeBase
 {
-    OrExpr(std::shared_ptr<BoolExpr> left, std::shared_ptr<BoolExpr> right)
-        : left{std::move(left)}
+    OrExpr(unsigned line, unsigned column, std::shared_ptr<BoolExpr> left,
+           std::shared_ptr<BoolExpr> right)
+        : NodeBase{line, column}
+        , left{std::move(left)}
         , right{std::move(right)}
     {}
 
@@ -340,26 +381,16 @@ template<class E, class... Args>
 inline std::shared_ptr<IntExpr> make_int_expr(
     unsigned line, unsigned column, Args&&... args)
 {
-    auto ret = std::make_shared<IntExpr>(
-        std::in_place_type<E>, std::forward<Args>(args)...);
-    NodeBase& base =
-        std::visit([](NodeBase& e) -> NodeBase& { return e; }, *ret);
-    base.line = line;
-    base.column = column;
-    return ret;
+    return std::make_shared<IntExpr>(
+        std::in_place_type<E>, line, column, std::forward<Args>(args)...);
 }
 
 template<class E, class... Args>
 inline std::shared_ptr<BoolExpr> make_bool_expr(
     unsigned line, unsigned column, Args&&... args)
 {
-    auto ret = std::make_shared<BoolExpr>(
-        std::in_place_type<E>, std::forward<Args>(args)...);
-    NodeBase& base =
-        std::visit([](NodeBase& e) -> NodeBase& { return e; }, *ret);
-    base.line = line;
-    base.column = column;
-    return ret;
+    return std::make_shared<BoolExpr>(
+        std::in_place_type<E>, line, column, std::forward<Args>(args)...);
 }
 
 } // namespace ast
