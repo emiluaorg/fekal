@@ -230,7 +230,8 @@ static std::string format(const ast::SyscallFilter& filter, unsigned indent)
     ret.append("){\n");
 
     for (const auto& e : filter.body) {
-        ret.append(std::string(indent + 1, ' ') + format(e, indent + 1) + ",\n");
+        ret.append(std::string(indent + 1, ' ') + format(*e, indent + 1) +
+                   ",\n");
     }
 
     return ret + std::string(indent, ' ') + "}";
