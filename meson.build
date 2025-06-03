@@ -12,7 +12,6 @@ libseccomp = dependency('libseccomp')
 boost = dependency(
     'boost',
     version : '>=1.82',
-    modules : ['context'],
 )
 
 extra_re2c_args = []
