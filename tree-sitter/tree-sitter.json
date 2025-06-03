@@ -10,7 +10,8 @@
         "fekal"
       ],
       "injection-regex": "^fekal$",
-      "class-name": "TreeSitterFekal"
+      "class-name": "TreeSitterFekal",
+      "highlights": "queries/highlights.scm"
     }
   ],
   "metadata": {
