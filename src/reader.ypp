@@ -283,19 +283,19 @@ bool reader::next()
 bool reader::operator==(const reader& o) const
 {
     assert(end == o.end);
-    return std::tie(begin, cursor) == std::tie(o.begin, o.cursor);
+    return begin == o.begin;
 }
 
 bool reader::operator!=(const reader& o) const
 {
     assert(end == o.end);
-    return std::tie(begin, cursor) != std::tie(o.begin, o.cursor);
+    return begin != o.begin;
 }
 
 bool reader::operator<(const reader& o) const
 {
     assert(end == o.end);
-    return std::tie(begin, cursor) < std::tie(o.begin, o.cursor);
+    return begin < o.begin;
 }
 
 } // namespace fekal
