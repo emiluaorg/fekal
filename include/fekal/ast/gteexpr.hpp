@@ -18,6 +18,11 @@ struct GteExpr : NodeBase
         , right{std::move(right)}
     {}
 
+    const NodeBase& base() const { return *this; }
+    NodeBase& base() { return *this; }
+
+    bool operator==(const GteExpr&) const;
+
     std::shared_ptr<IntExpr> left, right;
 };
 

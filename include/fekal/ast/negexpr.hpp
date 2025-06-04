@@ -16,6 +16,11 @@ struct NegExpr : NodeBase
         , inner{std::move(inner)}
     {}
 
+    const NodeBase& base() const { return *this; }
+    NodeBase& base() { return *this; }
+
+    bool operator==(const NegExpr&) const;
+
     std::shared_ptr<BoolExpr> inner;
 };
 

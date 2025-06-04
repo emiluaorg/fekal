@@ -18,6 +18,11 @@ struct SubtractExpr : NodeBase
         , right{std::move(right)}
     {}
 
+    const NodeBase& base() const { return *this; }
+    NodeBase& base() { return *this; }
+
+    bool operator==(const SubtractExpr&) const;
+
     std::shared_ptr<IntExpr> left, right;
 };
 

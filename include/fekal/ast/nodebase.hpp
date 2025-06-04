@@ -9,6 +9,8 @@ struct NodeBase
 {
     unsigned line = 0;
     unsigned column = 0;
+
+    bool operator==(const NodeBase&) const = default;
 };
 
 } // namespace fekal::ast

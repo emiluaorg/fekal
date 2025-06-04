@@ -33,3 +33,13 @@ inline std::shared_ptr<IntExpr> make_int_expr(
 }
 
 } // namespace fekal::ast
+
+#include <fekal/ast/impl/sumexpr.ipp>
+#include <fekal/ast/impl/subtractexpr.ipp>
+#include <fekal/ast/impl/mulexpr.ipp>
+#include <fekal/ast/impl/divexpr.ipp>
+#include <fekal/ast/impl/lshiftexpr.ipp>
+#include <fekal/ast/impl/rshiftexpr.ipp>
+#include <fekal/ast/impl/bitandexpr.ipp>
+#include <fekal/ast/impl/bitxorexpr.ipp>
+#include <fekal/ast/impl/bitorexpr.ipp>

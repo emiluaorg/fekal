@@ -3,16 +3,11 @@
 
 #pragma once
 
-#include <string>
-
 namespace fekal::ast {
 
-struct UseStatement
+inline bool NegExpr::operator==(const NegExpr& o) const
 {
-    bool operator==(const UseStatement&) const = default;
-
-    std::string policy;
-    std::string version;
-};
+    return std::tie(base(), *inner) == std::tie(o.base(), *o.inner);
+}
 
 } // namespace fekal::ast

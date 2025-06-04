@@ -18,6 +18,11 @@ struct OrExpr : NodeBase
         , right{std::move(right)}
     {}
 
+    const NodeBase& base() const { return *this; }
+    NodeBase& base() { return *this; }
+
+    bool operator==(const OrExpr&) const;
+
     std::shared_ptr<BoolExpr> left, right;
 };
 

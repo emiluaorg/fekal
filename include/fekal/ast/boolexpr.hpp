@@ -31,3 +31,13 @@ inline std::shared_ptr<BoolExpr> make_bool_expr(
 }
 
 } // namespace fekal::ast
+
+#include <fekal/ast/impl/eqexpr.ipp>
+#include <fekal/ast/impl/neqexpr.ipp>
+#include <fekal/ast/impl/ltexpr.ipp>
+#include <fekal/ast/impl/gtexpr.ipp>
+#include <fekal/ast/impl/lteexpr.ipp>
+#include <fekal/ast/impl/gteexpr.ipp>
+#include <fekal/ast/impl/negexpr.ipp>
+#include <fekal/ast/impl/andexpr.ipp>
+#include <fekal/ast/impl/orexpr.ipp>

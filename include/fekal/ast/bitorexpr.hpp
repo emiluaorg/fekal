@@ -18,6 +18,11 @@ struct BitOrExpr : NodeBase
         , right{std::move(right)}
     {}
 
+    const NodeBase& base() const { return *this; }
+    NodeBase& base() { return *this; }
+
+    bool operator==(const BitOrExpr&) const;
+
     std::shared_ptr<IntExpr> left, right;
 };
 
