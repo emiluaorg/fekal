@@ -24,6 +24,21 @@ struct SyscallFilter : NodeBase
     std::string syscall;
     std::vector<std::string> params;
     std::vector<std::shared_ptr<BoolExpr>> body;
+
+    bool operator==(const SyscallFilter& o) const {
+        bool syscall_eq = syscall == o.syscall;
+        bool params_eq = params == o.params;
+        bool body_eq = body.size() == o.body.size() && std::equal(
+            body.begin(),
+            body.end(),
+            o.body.begin(),
+            o.body.end(),
+            [](const std::shared_ptr<BoolExpr>& a, const std::shared_ptr<BoolExpr>& b) {
+                return *a == *b;
+            }
+        );
+        return syscall_eq && params_eq && body_eq;
+    }
 };
 
 } // namespace fekal::ast

@@ -46,11 +46,10 @@ src = [
 ]
 
 re2c_src = [
-    'src/main.ypp',
     'src/reader.ypp',
 ]
 
-fekal_bin = executable(
+fekal_lib = library(
     'fekal',
     src,
     re2c_gen.process(re2c_src),
@@ -59,3 +58,19 @@ fekal_bin = executable(
     implicit_include_directories : false,
     install : true,
 )
+
+bin_src = [
+    'src/main.ypp',
+]
+
+fekal_bin = executable(
+    'fekal',
+    re2c_gen.process(bin_src),
+    link_with : fekal_lib,
+    dependencies : [libseccomp, boost],
+    include_directories : incdir,
+    implicit_include_directories : false,
+    install : true,
+)
+
+subdir('test')

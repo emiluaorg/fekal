@@ -17,6 +17,8 @@ struct IntLit : NodeBase
     {}
 
     std::int64_t value;
+
+    bool operator==(const IntLit&) const = default;
 };
 
 } // namespace fekal::ast

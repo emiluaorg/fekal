@@ -17,6 +17,8 @@ struct Identifier : NodeBase
     {}
 
     std::string value;
+
+    bool operator==(const Identifier&) const = default;
 };
 
 } // namespace fekal::ast

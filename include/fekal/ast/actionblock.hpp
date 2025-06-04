@@ -17,6 +17,8 @@ struct ActionBlock : NodeBase
 
     Action action;
     std::vector<SyscallFilter> filters;
+
+    bool operator==(const ActionBlock&) const = default;
 };
 
 } // namespace fekal::ast
