@@ -4,6 +4,7 @@
 #define BOOST_TEST_MODULE AST
 
 #include <fekal/parser.hpp>
+#include <fekal/printer.hpp>
 #include <boost/test/included/unit_test.hpp>
 
 using namespace fekal;
@@ -13,7 +14,7 @@ BOOST_AUTO_TEST_CASE(assert_ast_structure)
     std::string input = R"(
         POLICY Aio 0 {
             ALLOW {
-                io_cancel, io_destroy, io_getevents, io_pgetevents, io_setup, io_submit
+                io_cancel, io_destroy, io_getevents, io_pgetevents, io_setup, io_submit,
             }
         }
         POLICY BasicIo 0 {
@@ -33,29 +34,32 @@ BOOST_AUTO_TEST_CASE(assert_ast_structure)
         }
     )";
     std::vector<ast::ProgramStatement> parsed = fekal::parse(input);
+    auto p = Printer(std::cout);
+    p.print(parsed);
+
     std::vector<ast::ProgramStatement> expected = {
-        ast::Policy("Aio", "0", {
+        ast::Policy(2, 19, "Aio", "0", {
             ast::ActionBlock{
                 ast::Action{fekal::ast::ActionAllow{}},
                 {
-                    ast::SyscallFilter("io_cancel"),
-                    ast::SyscallFilter("io_destroy"),
-                    ast::SyscallFilter("io_getevents"),
-                    ast::SyscallFilter("io_pgetevents"),
-                    ast::SyscallFilter("io_setup"),
-                    ast::SyscallFilter("io_submit"),
+                    ast::SyscallFilter(4, 25, "io_cancel"),
+                    ast::SyscallFilter(4, 37, "io_destroy"),
+                    ast::SyscallFilter(4, 51, "io_getevents"),
+                    ast::SyscallFilter(4, 66, "io_pgetevents"),
+                    ast::SyscallFilter(4, 76, "io_setup"),
+                    ast::SyscallFilter(4, 87, "io_submit"),
                 }
             }
         }),
-        ast::Policy("BasicIo", "0", {
-            ast::UseStatement{"Aio", "0"}
+        ast::Policy(7, 23, "BasicIo", "0", {
+            ast::UseStatement{8, 20, "Aio", "0"}
         }),
-        ast::Policy("Clock", "0", {}),
-        ast::Policy("CompatX86", "0", {
+        ast::Policy(10, 21, "Clock", "0", {}),
+        ast::Policy(11, 25, "CompatX86", "0", {
             ast::ActionBlock{
                 ast::Action{fekal::ast::ActionAllow{}},
                 {
-                    ast::SyscallFilter("personality", {"persona"}, {
+                    ast::SyscallFilter(13, 27, "personality", {ast::Identifier(13, 28, "persona")}, {
                         ast::make_bool_expr<ast::OrExpr>(
                             17,
                             34,

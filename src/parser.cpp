@@ -138,6 +138,8 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
 
     std::string name = r.value<token::symbol::IDENTIFIER>();
     r.next();
+    auto line = r.line();
+    auto column = r.column();
 
     std::string version;
     if (auto res = INTEGER(r) ; res) {
@@ -166,7 +168,7 @@ std::optional<ast::Policy> Policy(const recursion_context& recur, reader& r)
             continue;
         } else {
             if (expect<token::symbol::RBRACE>(r)) {
-                return ast::Policy{std::move(name), std::move(version), std::move(stmts)};
+                return ast::Policy{line, column, std::move(name), std::move(version), std::move(stmts)};
             } else {
                 r = backup;
                 return std::nullopt;
@@ -203,6 +205,9 @@ UseStatement(const recursion_context& recur, reader& r)
 
     std::string policy = r.value<token::symbol::IDENTIFIER>();
     r.next();
+    auto line = r.line();
+    auto column = r.column();
+
     std::string version;
     if (auto res = INTEGER(r); res) {
         version = std::to_string(*res);
@@ -214,7 +219,7 @@ UseStatement(const recursion_context& recur, reader& r)
         return std::nullopt;
     }
 
-    return ast::UseStatement {policy, version};
+    return ast::UseStatement{line, column, policy, version};
 }
 
 static
@@ -350,19 +355,26 @@ SyscallFilter(const recursion_context& recur, reader& r)
     std::string syscall = r.value<token::symbol::IDENTIFIER>();
     r.next();
 
-    auto return_matched = [&r,&syscall,backup=r]() {
+    auto line = r.line();
+    auto column = r.column();
+
+    auto return_matched = [&r,&syscall,backup=r, &line, &column]() {
         r = backup;
-        return ast::SyscallFilter{std::move(syscall)};
+        return ast::SyscallFilter{line, column, std::move(syscall)};
     };
 
     if (!expect<token::symbol::LPAREN>(r)) {
         return return_matched();
     }
 
-    std::vector<std::string> params;
+    std::vector<ast::Identifier> params;
 
     if (r.symbol() == token::symbol::IDENTIFIER) {
-        params.emplace_back(r.value<token::symbol::IDENTIFIER>());
+        params.emplace_back(ast::Identifier{
+            r.line(),
+            r.column(),
+            r.value<token::symbol::IDENTIFIER>(),
+        });
         r.next();
     }
 
@@ -370,7 +382,11 @@ SyscallFilter(const recursion_context& recur, reader& r)
         if (r.symbol() != token::symbol::IDENTIFIER) {
             return return_matched();
         }
-        params.emplace_back(r.value<token::symbol::IDENTIFIER>());
+        params.emplace_back(ast::Identifier{
+            r.line(),
+            r.column(),
+            r.value<token::symbol::IDENTIFIER>(),
+        });
         r.next();
     }
 
@@ -394,12 +410,22 @@ SyscallFilter(const recursion_context& recur, reader& r)
             case token::symbol::RBRACE:
                 r.next();
                 return ast::SyscallFilter{
-                    std::move(syscall), std::move(params), std::move(body)};
+                    line,
+                    column,
+                    std::move(syscall),
+                    std::move(params),
+                    std::move(body),
+                };
             }
         } else {
             if (expect<token::symbol::RBRACE>(r)) {
                 return ast::SyscallFilter{
-                    std::move(syscall), std::move(params), std::move(body)};
+                    line,
+                    column,
+                    std::move(syscall),
+                    std::move(params),
+                    std::move(body),
+                };
             } else {
                 return return_matched();
             }

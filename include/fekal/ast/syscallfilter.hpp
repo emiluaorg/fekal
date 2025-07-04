@@ -9,20 +9,28 @@
 
 namespace fekal::ast {
 
+using SyscallParameters = std::vector<ast::Identifier>;
+
 struct SyscallFilter : NodeBase
 {
-    SyscallFilter(std::string syscall) : syscall{std::move(syscall)} {}
+    SyscallFilter(unsigned line, unsigned column, std::string syscall)
+        : NodeBase{line, column}
+        , syscall{std::move(syscall)} {}
 
     SyscallFilter(
-        std::string syscall, std::vector<std::string> params,
+        unsigned line,
+        unsigned column,
+        std::string syscall,
+        SyscallParameters params,
         std::vector<std::shared_ptr<BoolExpr>> body)
-        : syscall{std::move(syscall)}
+        : NodeBase{line, column}
+        , syscall{std::move(syscall)}
         , params{std::move(params)}
         , body{std::move(body)}
     {}
 
     std::string syscall;
-    std::vector<std::string> params;
+    SyscallParameters params;
     std::vector<std::shared_ptr<BoolExpr>> body;
 
     bool operator==(const SyscallFilter& o) const {

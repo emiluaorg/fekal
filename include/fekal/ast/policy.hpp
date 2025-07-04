@@ -9,9 +9,13 @@ namespace fekal::ast {
 
 struct Policy : NodeBase
 {
-    Policy(std::string name, std::string version,
+    Policy(unsigned line,
+           unsigned column,
+           std::string name,
+           std::string version,
            std::vector<PolicyStatement> body)
-        : name{std::move(name)}
+        : NodeBase{line, column}
+        , name{std::move(name)}
         , version{std::move(version)}
         , body{std::move(body)}
     {}
