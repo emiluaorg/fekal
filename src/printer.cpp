@@ -6,6 +6,7 @@
 #include <boost/hana/functional/overload.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <ostream>
+#include <format>
 
 namespace fekal {
 
