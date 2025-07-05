@@ -43,6 +43,7 @@ incdir = include_directories([
 src = [
     'src/parser.cpp',
     'src/ast.cpp',
+    'src/printer.cpp',
 ]
 
 re2c_src = [

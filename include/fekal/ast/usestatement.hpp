@@ -21,6 +21,10 @@ struct UseStatement : NodeBase
 
     std::string policy;
     std::string version;
+
+    std::string id() const {
+        return policy + version;
+    }
 };
 
 } // namespace fekal::ast

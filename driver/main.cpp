@@ -4,6 +4,7 @@
 #include <istream>
 #include <fstream>
 #include <fekal/parser.hpp>
+#include <fekal/printer.hpp>
 #include <iostream>
 
 static std::string read_file(std::istream& s)
@@ -37,7 +38,7 @@ int main(int argc, char* argv[])
     std::ifstream in{argv[1], std::ios::in | std::ios::binary};
     std::string source = read_file(in);
     try {
-        std::cout << fekal::format(fekal::parse(source)) << std::endl;
+        fekal::print(std::cout, fekal::parse(source));
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }

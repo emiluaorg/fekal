@@ -4,7 +4,6 @@
 #define BOOST_TEST_MODULE AST
 
 #include <fekal/parser.hpp>
-#include <fekal/printer.hpp>
 #include <boost/test/included/unit_test.hpp>
 
 using namespace fekal;
@@ -34,9 +33,6 @@ BOOST_AUTO_TEST_CASE(assert_ast_structure)
         }
     )";
     std::vector<ast::ProgramStatement> parsed = fekal::parse(input);
-    auto p = Printer(std::cout);
-    p.print(parsed);
-
     std::vector<ast::ProgramStatement> expected = {
         ast::Policy(2, 19, "Aio", "0", {
             ast::ActionBlock{

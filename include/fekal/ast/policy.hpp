@@ -25,6 +25,10 @@ struct Policy : NodeBase
     std::vector<PolicyStatement> body;
 
     bool operator==(const Policy&) const = default;
+
+    std::string id() const {
+        return name + version;
+    }
 };
 
 } // namespace fekal::ast
