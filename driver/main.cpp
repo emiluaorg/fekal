@@ -4,8 +4,12 @@
 #include <istream>
 #include <fstream>
 #include <fekal/parser.hpp>
+#include <fekal/compiler.hpp>
 #include <fekal/printer.hpp>
 #include <iostream>
+#include <unistd.h>
+#include <term.h>
+#include <curses.h>
 
 static std::string read_file(std::istream& s)
 {
@@ -33,12 +37,30 @@ static std::string read_file(std::istream& s)
     return ret;
 }
 
+bool has_color()
+{
+    if (!isatty(STDOUT_FILENO)) {
+        return false;
+    }
+    int ec = 0;
+    if (setupterm(NULL, STDOUT_FILENO, &ec) == ERR) {
+        return false;
+    }
+    bool ret = tigetnum(const_cast<char*>("colors")) > 0;
+    del_curterm(cur_term);
+    return ret;
+}
+
+
 int main(int argc, char* argv[])
 {
     std::ifstream in{argv[1], std::ios::in | std::ios::binary};
     std::string source = read_file(in);
     try {
-        fekal::print(std::cout, fekal::parse(source));
+        auto compiler = fekal::Compiler{has_color()};
+        auto ast = compiler.compile(source);
+        compiler.print_errors();
+        fekal::print(std::cout, ast);
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }

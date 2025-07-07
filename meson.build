@@ -41,8 +41,10 @@ incdir = include_directories([
 ])
 
 src = [
-    'src/parser.cpp',
     'src/ast.cpp',
+    'src/parser.cpp',
+    'src/checker.cpp',
+    'src/compiler.cpp',
     'src/printer.cpp',
 ]
 
