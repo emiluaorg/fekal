@@ -4,6 +4,7 @@
 #pragma once
 
 #include <fekal/ast/nodebase.hpp>
+#include <algorithm>
 #include <iostream>
 #include <ostream>
 #include <ranges>
