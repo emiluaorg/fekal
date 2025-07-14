@@ -4,6 +4,7 @@
 #include <fekal/compiler.hpp>
 #include <fekal/checker.hpp>
 #include <fekal/parser.hpp>
+#include <fekal/checker/syscalls/open.hpp>
 
 namespace fekal {
 
@@ -24,7 +25,14 @@ std::vector<ast::ProgramStatement> Compiler::compile(const std::string_view sour
 {
     auto ast = fekal::parse(source);
     fekal::check(context, diagnostics, ast);
+    compile_rules(ast);
     return ast;
+}
+
+void Compiler::compile_rules(const std::vector<ast::ProgramStatement>& ast)
+{
+    auto syscallOpen = fekal::rules::SyscallOpen{context, diagnostics};
+    syscallOpen.check(ast);
 }
 
 } // namespace fekal

@@ -4,9 +4,11 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <fekal/ast.hpp>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -23,20 +25,27 @@ struct Symbol
     {
         references++;
     }
+
+    inline bool is_blank() const
+    {
+        return name == "_";
+    }
 };
 
 struct Scope
 {
     bool has_symbol(const std::string& id) const
     {
-        return symbols.contains(id) || inheritSymbols.contains(id);
+        return id != "_" && (symbols.contains(id) || inheritSymbols.contains(id));
     }
 
     bool declare_symbol(const Symbol& symbol)
     {
         if (!symbols.contains(symbol.name)) {
             auto symbol_ptr = std::make_shared<Symbol>(symbol);
-            symbols.insert(std::make_pair(symbol.name, symbol_ptr));
+            if (!symbol.is_blank()) {
+                symbols.insert(std::make_pair(symbol.name, symbol_ptr));
+            }
             symbolsOrder.emplace_back(symbol_ptr);
             return true;
         }
@@ -55,7 +64,7 @@ struct Scope
 
     size_t num_symbols()
     {
-        return symbols.size();
+        return symbolsOrder.size();
     }
 
     Symbol& get_symbol(const std::string& name)
@@ -66,7 +75,7 @@ struct Scope
         throw std::runtime_error("Symbol not found");
     }
 
-    unsigned get_symbol_position(const std::string& name)
+    std::optional<unsigned> get_symbol_position(const std::string& name) const
     {
         auto it = std::find_if(
             symbolsOrder.begin(),
@@ -74,6 +83,9 @@ struct Scope
             [&name](const std::shared_ptr<Symbol>& symbol) {
                 return symbol->name == name;
             });
+        if (it == symbolsOrder.cend()) {
+            return std::nullopt;
+        }
         return std::distance(symbolsOrder.begin(), it);
     }
 

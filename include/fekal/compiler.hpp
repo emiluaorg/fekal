@@ -21,6 +21,7 @@ struct Compiler
     void reset();
     void print_errors();
     std::vector<ast::ProgramStatement> compile(const std::string_view source);
+    void compile_rules(const std::vector<ast::ProgramStatement>& source);
 };
 
 } // namespace fekal
