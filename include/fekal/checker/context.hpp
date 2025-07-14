@@ -47,7 +47,7 @@ struct Context
         return *nodeScopes.at(&node);
     }
 
-    bool has_symbol(const std::string symbol)
+    bool has_symbol(const std::string& symbol)
     {
         for (int i = scopeIndex; i >= 0; i--) {
             if (scopes.at(i)->has_symbol(symbol)) {

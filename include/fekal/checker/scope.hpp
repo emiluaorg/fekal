@@ -58,7 +58,7 @@ struct Scope
         return symbols.size();
     }
 
-    Symbol& get_symbol(const std::string name)
+    Symbol& get_symbol(const std::string& name)
     {
         if (symbols.contains(name)) {
             return *symbols.at(name).get();
@@ -66,7 +66,7 @@ struct Scope
         throw std::runtime_error("Symbol not found");
     }
 
-    unsigned get_symbol_position(const std::string name)
+    unsigned get_symbol_position(const std::string& name)
     {
         auto it = std::find_if(
             symbolsOrder.begin(),
