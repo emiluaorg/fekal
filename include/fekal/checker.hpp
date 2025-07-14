@@ -7,6 +7,7 @@
 #include <fekal/diagnostics.hpp>
 #include <fekal/checker/context.hpp>
 #include <ranges>
+#include <format>
 
 namespace fekal {
 
